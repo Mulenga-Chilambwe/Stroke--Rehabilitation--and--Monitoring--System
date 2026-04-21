@@ -1,0 +1,16 @@
+/*
+ * styles/patient.css
+ * Patient portal: teal / green theme
+ */
+:root {
+  --clr-primary:    #1a7f74;
+  --clr-primary-dk: #115c54;
+  --clr-primary-lt: #e0f4f0;
+  --clr-accent:     #f59e42;
+  --clr-accent-lt:  #fdf3e3;
+  --clr-bg:         #f0f7f5;
+  --clr-fg:         #1c3a34;
+  --clr-border:     #cce4de;
+  --clr-muted:      #6a9c93;
+  --clr-card:       #ffffff;
+}

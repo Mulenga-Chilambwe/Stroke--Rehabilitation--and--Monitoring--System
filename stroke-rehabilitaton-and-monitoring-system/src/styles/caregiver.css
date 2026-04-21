@@ -1,0 +1,17 @@
+/*
+ * styles/caregiver.css
+ * Caregiver portal: warm amber / orange theme
+ * Overrides the default CSS variables declared in globals.css
+ */
+:root {
+  --clr-primary:    #d97706;
+  --clr-primary-dk: #a65d00;
+  --clr-primary-lt: #fef3dc;
+  --clr-accent:     #1a7f74;
+  --clr-accent-lt:  #e0f4f0;
+  --clr-bg:         #fdf6ee;
+  --clr-fg:         #3a2a10;
+  --clr-border:     #e8d5b5;
+  --clr-muted:      #9a7a50;
+  --clr-card:       #ffffff;
+}

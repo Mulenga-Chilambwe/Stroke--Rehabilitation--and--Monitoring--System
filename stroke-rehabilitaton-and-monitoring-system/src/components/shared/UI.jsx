@@ -1,0 +1,324 @@
+/**
+ * components/shared/UI.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Re-usable "dumb" UI primitives used by all three portals.
+ *
+ * Components exported:
+ *   Sidebar       – left navigation rail
+ *   Topbar        – sticky page header
+ *   ProgressBar   – animated fill bar
+ *   StatCard      – KPI tile (icon + number)
+ *   Badge         – coloured pill label
+ *   Alert         – info / warn / danger banner
+ *   Modal         – overlay dialog
+ *   PageWrapper   – shell (Sidebar + Topbar + content area)
+ * ─────────────────────────────────────────────────────────────
+ */
+
+import React from 'react';
+import '../../styles/shared.css';
+
+// ══════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════
+/**
+ * Sidebar
+ * Props:
+ *   user       – { name, avatar, color, role }
+ *   page       – current active page id (string)
+ *   setPage    – setter to change active page
+ *   navSections– [{ section: string, items: [{ id, icon, label, badge? }] }]
+ *   onLogout   – callback
+ */
+export const Sidebar = ({ user, page, setPage, navSections, onLogout }) => {
+  const roleLabel =
+    user.role === 'hp'
+      ? 'Health Professional'
+      : user.role === 'caregiver'
+      ? 'Caregiver'
+      : 'Patient';
+
+  return (
+    <nav className="sidebar">
+      {/* ── Brand ── */}
+      <div className="sidebar__logo">
+        <h1>
+          Stroke<span>Rehab</span>
+        </h1>
+        <p>Copperbelt University</p>
+        <span className="sidebar__role-badge">{roleLabel}</span>
+      </div>
+
+      {/* ── Nav sections ── */}
+      <div className="sidebar__nav">
+        {navSections.map((section) => (
+          <div key={section.section}>
+            <div className="sidebar__section-label">{section.section}</div>
+            {section.items.map((item) => (
+              <div
+                key={item.id}
+                className={`sidebar__item ${page === item.id ? 'active' : ''}`}
+                onClick={() => setPage(item.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && setPage(item.id)}
+              >
+                <span className="sidebar__item-icon">{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="sidebar__item-badge">{item.badge}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* ── User footer ── */}
+      <div className="sidebar__footer">
+        <div
+          className="sidebar__avatar"
+          style={{ background: user.color }}
+        >
+          {user.avatar}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="sidebar__user-name">{user.name}</div>
+          <div className="sidebar__user-role">{roleLabel}</div>
+        </div>
+        <button
+          className="sidebar__logout"
+          onClick={onLogout}
+          title="Log out"
+        >
+          ⎋
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+// ══════════════════════════════════════════
+// TOPBAR
+// ══════════════════════════════════════════
+/**
+ * Topbar
+ * Props:
+ *   title      – page heading string
+ *   user       – current user object
+ *   unreadCount– number of unread messages (shows dot on bell)
+ *   onBellClick– opens messages page
+ */
+export const Topbar = ({ title, user, unreadCount = 0, onBellClick }) => {
+  const today = new Date().toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return (
+    <header className="topbar">
+      <h2 className="topbar__title">{title}</h2>
+
+      <div className="topbar__right">
+        {/* Live sync indicator */}
+        <div className="sync-chip">
+          <span className="sync-dot" />
+          Live Sync
+        </div>
+
+        {/* Date chip */}
+        <span
+          style={{
+            fontSize: '0.75rem',
+            background: 'var(--clr-primary-lt)',
+            color: 'var(--clr-primary)',
+            padding: '5px 12px',
+            borderRadius: 'var(--radius-pill)',
+            fontWeight: 500,
+          }}
+        >
+          📅 {today}
+        </span>
+
+        {/* Notification bell */}
+        <button className="notif-btn" onClick={onBellClick} title="Messages">
+          🔔
+          {unreadCount > 0 && <span className="notif-btn__dot" />}
+        </button>
+
+        {/* User name chip */}
+        <span className="user-chip">{user.name.split(' ')[0]}</span>
+      </div>
+    </header>
+  );
+};
+
+// ══════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════
+/**
+ * ProgressBar
+ * Props:
+ *   value – 0–100
+ *   color – CSS colour string (defaults to --clr-primary)
+ */
+export const ProgressBar = ({ value, color }) => (
+  <div className="progress-bar__track">
+    <div
+      className="progress-bar__fill"
+      style={{
+        width: `${Math.min(100, Math.max(0, value))}%`,
+        background: color || 'var(--clr-primary)',
+      }}
+    />
+  </div>
+);
+
+// ══════════════════════════════════════════
+// STAT CARD
+// ══════════════════════════════════════════
+/**
+ * StatCard
+ * Props:
+ *   icon      – emoji string
+ *   label     – short label text
+ *   value     – main metric value (string or number)
+ *   sub       – secondary line (optional)
+ *   iconBg    – background colour for the icon box
+ */
+export const StatCard = ({ icon, label, value, sub, iconBg }) => (
+  <div className="stat-card">
+    <div className="stat-card__icon" style={{ background: iconBg || 'var(--clr-primary-lt)' }}>
+      {icon}
+    </div>
+    <div className="stat-card__label">{label}</div>
+    <div className="stat-card__value">{value}</div>
+    {sub && <div className="stat-card__sub">{sub}</div>}
+  </div>
+);
+
+// ══════════════════════════════════════════
+// BADGE
+// ══════════════════════════════════════════
+/**
+ * Badge
+ * Props:
+ *   variant – 'green' | 'warn' | 'red' | 'blue' | 'muted'
+ *   children
+ */
+export const Badge = ({ variant = 'muted', children, style }) => (
+  <span className={`badge badge--${variant}`} style={style}>
+    {children}
+  </span>
+);
+
+// ══════════════════════════════════════════
+// ALERT BANNER
+// ══════════════════════════════════════════
+/**
+ * Alert
+ * Props:
+ *   variant – 'info' | 'warn' | 'danger' | 'success'
+ *   icon    – emoji prefix (optional)
+ *   children
+ *   style   – extra inline styles
+ */
+export const Alert = ({ variant = 'info', icon, children, style }) => (
+  <div className={`alert alert--${variant}`} style={style}>
+    {icon && <span>{icon}</span>}
+    <span>{children}</span>
+  </div>
+);
+
+// ══════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════
+/**
+ * Modal
+ * Props:
+ *   title    – header string
+ *   onClose  – close callback
+ *   wide     – boolean, uses modal--wide class
+ *   footer   – ReactNode rendered in footer slot
+ *   children – modal body content
+ */
+export const Modal = ({ title, onClose, wide, footer, children }) => (
+  <div
+    className="modal-overlay"
+    onClick={onClose}
+    role="dialog"
+    aria-modal="true"
+  >
+    <div
+      className={`modal ${wide ? 'modal--wide' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="modal__header">
+        <h2>{title}</h2>
+        <button className="modal__close" onClick={onClose}>
+          ✕
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="modal__body">{children}</div>
+
+      {/* Footer */}
+      {footer && <div className="modal__footer">{footer}</div>}
+    </div>
+  </div>
+);
+
+// ══════════════════════════════════════════
+// PAGE WRAPPER  (Shell: Sidebar + Topbar + content)
+// ══════════════════════════════════════════
+/**
+ * PageWrapper
+ * Combines Sidebar + Topbar + scrollable content area.
+ * Props:
+ *   user        – current user
+ *   page        – active page id
+ *   setPage     – page setter
+ *   navSections – sidebar nav config
+ *   pageTitle   – topbar heading string
+ *   unreadCount – bell badge count
+ *   onLogout    – logout callback
+ *   children    – the actual page component
+ */
+export const PageWrapper = ({
+  user,
+  page,
+  setPage,
+  navSections,
+  pageTitle,
+  unreadCount,
+  onLogout,
+  children,
+}) => (
+  <div className="app-shell">
+    <Sidebar
+      user={user}
+      page={page}
+      setPage={setPage}
+      navSections={navSections}
+      onLogout={onLogout}
+    />
+
+    <div className="main-content">
+      <Topbar
+        title={pageTitle}
+        user={user}
+        unreadCount={unreadCount}
+        onBellClick={() => setPage('messages')}
+      />
+
+      {/* Animate page transitions */}
+      <div className="page-content" key={page}>
+        {children}
+      </div>
+    </div>
+  </div>
+);

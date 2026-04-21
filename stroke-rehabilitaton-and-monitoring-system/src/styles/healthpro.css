@@ -1,0 +1,17 @@
+/*
+ * styles/healthpro.css
+ * Health Professional portal: deep blue / indigo theme
+ * Overrides the default CSS variables declared in globals.css
+ */
+:root {
+  --clr-primary:    #3b5bdb;
+  --clr-primary-dk: #2a44c4;
+  --clr-primary-lt: #e8ecfb;
+  --clr-accent:     #f59e42;
+  --clr-accent-lt:  #fdf3e3;
+  --clr-bg:         #f0f2fa;
+  --clr-fg:         #1a2150;
+  --clr-border:     #c8d0ee;
+  --clr-muted:      #6872aa;
+  --clr-card:       #ffffff;
+}
