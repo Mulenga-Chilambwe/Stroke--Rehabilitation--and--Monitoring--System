@@ -1,84 +1,63 @@
-/**
- * components/patient/PatientPortal.jsx
- * ─────────────────────────────────────────────────────────────
- * Top-level shell for the Patient portal.
- *
- * Responsibilities:
- *   • Owns the active-page state for this portal
- *   • Defines the sidebar navigation items
- *   • Applies the patient colour theme via CSS variables
- *   • Renders the correct page component based on active page
- *   • Passes unread-message count to the Topbar bell
- * ─────────────────────────────────────────────────────────────
- */
-
 import React, { useState } from 'react';
-
-import { useStore }   from '../../context/StoreContext';
-import { useAuth }    from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import { useStore } from '../../context/StoreContext';
 import { PageWrapper } from '../shared/UI';
-
-/* Page components */
 import PatientDashboard from '../../pages/patient/PatientDashboard';
 import PatientExercises from '../../pages/patient/PatientExercises';
-import PatientProgress  from '../../pages/patient/PatientProgress';
-import Messages         from '../shared/Messages';
-
-/* Patient-specific styles (overrides CSS variables) */
+import PatientProgress from '../../pages/patient/PatientProgress';
+import PatientMedications from '../../pages/patient/PatientMedications';
+import Messages from '../shared/Messages';
 import '../../styles/patient.css';
 
-/* ── Sidebar nav config ── */
 const NAV_SECTIONS = [
   {
     section: 'My Care',
     items: [
-      { id: 'dashboard',  icon: '🏠', label: 'Dashboard'    },
-      { id: 'exercises',  icon: '💪', label: 'My Exercises' },
-      { id: 'progress',   icon: '📈', label: 'My Progress'  },
+      { id: 'dashboard', icon: 'Home', label: 'Dashboard' },
+      { id: 'exercises', icon: 'Video', label: 'Exercise Videos' },
+      { id: 'progress', icon: 'Chart', label: 'Progress' },
+      { id: 'medications', icon: 'Meds', label: 'Medication' },
     ],
   },
   {
     section: 'Communication',
-    items: [
-      { id: 'messages', icon: '💬', label: 'Messages' },
-    ],
+    items: [{ id: 'messages', icon: 'Chat', label: 'Messages' }],
   },
 ];
 
-/* Human-readable page titles shown in the Topbar */
 const PAGE_TITLES = {
-  dashboard:  'My Dashboard',
-  exercises:  'My Exercises',
-  progress:   'My Progress',
-  messages:   'Messages',
+  dashboard: 'My Recovery Dashboard',
+  exercises: 'Remote Physiotherapy Videos',
+  progress: 'My Recovery Record',
+  medications: 'Medication Tracker',
+  messages: 'Messages',
 };
 
 const PatientPortal = () => {
   const { currentUser, logout } = useAuth();
-  const [state]                 = useStore();
-  const [page, setPage]         = useState('dashboard');
+  const [state] = useStore();
+  const [page, setPage] = useState('dashboard');
+  const patientId = currentUser.patientId || 'p1';
 
-  /* Unread messages addressed to 'patient' */
   const unreadCount = state.messages.filter(
-    (m) => m.to === 'patient' && !m.read
+    (message) => message.patientId === patientId && message.to === 'patient' && !message.read
   ).length;
 
-  /* Badge on the nav item */
-  const navWithBadge = NAV_SECTIONS.map((sec) => ({
-    ...sec,
-    items: sec.items.map((item) =>
+  const navWithBadge = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.map((item) =>
       item.id === 'messages' ? { ...item, badge: unreadCount } : item
     ),
   }));
 
-  /* Render the active page */
   const renderPage = () => {
     switch (page) {
-      case 'dashboard':  return <PatientDashboard setPage={setPage} />;
-      case 'exercises':  return <PatientExercises />;
-      case 'progress':   return <PatientProgress />;
-      case 'messages':   return <Messages currentUser={currentUser} />;
-      default:           return <PatientDashboard setPage={setPage} />;
+      case 'dashboard': return <PatientDashboard setPage={setPage} />;
+      case 'exercises': return <PatientExercises />;
+      case 'progress': return <PatientProgress />;
+      case 'medications': return <PatientMedications />;
+      case 'messages': return <Messages currentUser={currentUser} />;
+      default: return <PatientDashboard setPage={setPage} />;
     }
   };
 

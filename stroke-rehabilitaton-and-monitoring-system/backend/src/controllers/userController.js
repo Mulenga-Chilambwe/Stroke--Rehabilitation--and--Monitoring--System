@@ -33,6 +33,8 @@ const registerUser = async (req, res) => {
       role,
       avatar: initialsFromName(cleanName),
       color: colorForRole(role),
+      patientId: role === "patient" || role === "caregiver" ? "p1" : "",
+      doctorId: role === "hp" ? "d1" : "",
     });
 
     return res.status(201).json({

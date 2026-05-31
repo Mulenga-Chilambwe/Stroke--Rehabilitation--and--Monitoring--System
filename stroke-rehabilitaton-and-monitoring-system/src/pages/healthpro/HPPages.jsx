@@ -1,203 +1,132 @@
-/**
- * pages/healthpro/HPPages.jsx
- * ─────────────────────────────────────────────────────────────
- * All Health-Professional page components live here.
- * They are named exports so HPPortal.jsx can import selectively.
- *
- * Exports:
- *   HPDashboard    – clinical overview (vitals, sessions, alerts)
- *   HPExercisePlan – assign / remove exercises; syncs to all portals
- *   HPReports      – full session table + vitals summary
- * ─────────────────────────────────────────────────────────────
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { StatCard, ProgressBar, Alert, Badge, Modal } from '../../components/shared/UI';
+import { Alert, Badge, Modal, ProgressBar, StatCard } from '../../components/shared/UI';
+import {
+  difficultyVariant,
+  getAssignedExercises,
+  getCaregiverForPatient,
+  getDoctorIdForUser,
+  getPatient,
+  getPatientSessions,
+  riskVariant,
+} from '../../utils/care';
 
-/* ── Helpers ─────────────────────────────────────────────── */
+const useDoctorState = () => {
+  const { currentUser } = useAuth();
+  const [state, dispatch] = useStore();
+  const doctorId = getDoctorIdForUser(currentUser);
+  const patients = state.patients.filter((patient) => patient.doctorId === doctorId);
+  return { currentUser, state, dispatch, doctorId, patients };
+};
 
-/** Map exercise difficulty to a badge colour variant. */
-const diffBadge = (d) =>
-  d === 'easy' ? 'green' : d === 'med' ? 'warn' : 'red';
+const PatientSelector = ({ patients, selectedId, onSelect }) => (
+  <select className="select-control" value={selectedId} onChange={(e) => onSelect(e.target.value)}>
+    {patients.map((patient) => (
+      <option key={patient.id} value={patient.id}>{patient.name}</option>
+    ))}
+  </select>
+);
 
-
-// ══════════════════════════════════════════════════════════════
-// HP DASHBOARD
-// ══════════════════════════════════════════════════════════════
-/**
- * HPDashboard
- * ─────────────────────────────────────────────────────────────
- * Clinical overview for the Health Professional.
- *
- * Shows:
- *   • 4 KPI stat cards
- *   • Patient summary card with vitals (synced from caregiver)
- *   • Recent session list
- *   • System alerts
- * ─────────────────────────────────────────────────────────────
- */
 const HPDashboard = () => {
-  const [state] = useStore();
-  const { patientProfile: p, vitals: v, sessions, alerts, messages } = state;
-
-  const completedSessions = sessions.filter((s) => s.completed).length;
-  const unreadMessages    = messages.filter((m) => !m.read && m.to === 'hp').length;
-  const unreadAlerts      = alerts.filter((a) => !a.read).length;
+  const { state, patients } = useDoctorState();
+  const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+  const selected = getPatient(state, selectedId);
+  const caregiver = getCaregiverForPatient(state, selectedId);
+  const vitals = state.vitals[selectedId];
+  const sessions = getPatientSessions(state, selectedId);
+  const assigned = getAssignedExercises(state, selectedId);
+  const unread = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
+  const alerts = state.alerts.filter((alert) => !alert.read);
+  const avgProgress = Math.round(patients.reduce((sum, p) => sum + p.progress, 0) / Math.max(patients.length, 1));
 
   return (
     <div>
-      {/* ── KPI cards ── */}
       <div className="grid-4 anim-fade-up anim-delay-1" style={{ marginBottom: 20 }}>
-        <StatCard
-          icon="📈"
-          label="Recovery Progress"
-          value={`${p.progress}%`}
-          sub="overall"
-          iconBg="var(--clr-primary-lt)"
-        />
-        <StatCard
-          icon="✅"
-          label="Sessions Done"
-          value={`${completedSessions}/${sessions.length}`}
-          sub="all time"
-          iconBg="#e6f9f0"
-        />
-        <StatCard
-          icon="💬"
-          label="Unread Messages"
-          value={unreadMessages}
-          sub="pending review"
-          iconBg="#fff5e6"
-        />
-        <StatCard
-          icon="⚠️"
-          label="Active Alerts"
-          value={unreadAlerts}
-          sub="require action"
-          iconBg="#fdeaea"
-        />
+        <StatCard icon="Users" label="Patients" value={patients.length} sub="assigned to you" />
+        <StatCard icon="Chart" label="Avg Recovery" value={`${avgProgress}%`} sub="all active patients" />
+        <StatCard icon="Msg" label="Unread" value={unread} sub="messages" />
+        <StatCard icon="Alert" label="Alerts" value={alerts.length} sub="clinical review" />
       </div>
 
       <div className="grid-2 anim-fade-up anim-delay-2">
-        {/* ── Patient overview card ── */}
         <div className="card">
           <div className="card__header">
-            <span className="card__title">Patient: {p.name}</span>
-            <Badge variant="green">Active</Badge>
+            <span className="card__title">Assigned patients</span>
+            <Badge variant="blue">{patients.length} cases</Badge>
           </div>
-          <div className="card__body">
-            {/* Avatar + basic info */}
-            <div style={{ display: 'flex', gap: 14, marginBottom: 16 }}>
-              <div
-                style={{
-                  width: 56, height: 56, borderRadius: 14,
-                  background: 'var(--clr-primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.3rem', color: '#fff', fontWeight: 700, flexShrink: 0,
-                }}
-              >
-                MB
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>
-                  {p.name}
-                </div>
-                <div className="text-muted">{p.condition} · {p.age} yrs old</div>
-                <div className="text-muted">Admitted: {p.admitDate}</div>
-              </div>
-            </div>
-
-            {/* Recovery bar */}
-            <div className="flex-between" style={{ marginBottom: 8 }}>
-              <span className="text-muted">Recovery</span>
-              <strong style={{ color: 'var(--clr-primary)' }}>{p.progress}%</strong>
-            </div>
-            <ProgressBar value={p.progress} />
-
-            <div className="divider" />
-
-            {/* Vitals (synced from caregiver) */}
-            <div style={{ fontWeight: 600, fontSize: '0.86rem', marginBottom: 10 }}>
-              Latest Vitals{' '}
-              <span className="text-muted" style={{ fontWeight: 400 }}>
-                · updated {v.lastUpdated}
-              </span>
-            </div>
-            <div className="vitals-grid">
-              {[
-                { icon: '💓', label: 'Heart Rate',    value: `${v.heartRate} bpm` },
-                { icon: '🩺', label: 'Blood Pressure', value: v.bp },
-                { icon: '🌡️', label: 'Temperature',   value: `${v.temp} °C` },
-                { icon: '🫀', label: 'O₂ Saturation', value: `${v.oxygenSat}%` },
-              ].map(({ icon, label, value }) => (
-                <div key={label} className="vital-cell">
-                  <span style={{ fontSize: '1.2rem' }}>{icon}</span>
-                  <div>
-                    <div className="vital-cell__label">{label}</div>
-                    <div className="vital-cell__value">{value}</div>
+          <div className="card__body stack-list">
+            {patients.map((patient) => {
+              const patientAlerts = state.alerts.filter((alert) => alert.patientId === patient.id && !alert.read).length;
+              return (
+                <button
+                  key={patient.id}
+                  className={`patient-case ${selectedId === patient.id ? 'active' : ''}`}
+                  onClick={() => setSelectedId(patient.id)}
+                >
+                  <div className="patient-row__avatar" style={{ background: patient.risk === 'high' ? '#e05252' : '#3b5bdb' }}>
+                    {patient.avatar}
                   </div>
-                </div>
-              ))}
-            </div>
+                  <div style={{ flex: 1 }}>
+                    <strong>{patient.name}</strong>
+                    <span>{patient.condition} · Caregiver: {getCaregiverForPatient(state, patient.id).name}</span>
+                    <ProgressBar value={patient.progress} />
+                  </div>
+                  <Badge variant={riskVariant(patient.risk)}>{patient.risk}</Badge>
+                  {patientAlerts > 0 && <Badge variant="red">{patientAlerts}</Badge>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* ── Right column: recent sessions + alerts ── */}
         <div className="card-stack">
-          {/* Recent sessions */}
           <div className="card">
             <div className="card__header">
-              <span className="card__title">Recent Sessions</span>
+              <span className="card__title">{selected.name} clinical snapshot</span>
+              <PatientSelector patients={patients} selectedId={selectedId} onSelect={setSelectedId} />
             </div>
             <div className="card__body">
-              {[...sessions].reverse().slice(0, 4).map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    display: 'flex', gap: 10, padding: '9px 0',
-                    borderBottom: '1px solid var(--clr-border)',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: '1rem' }}>
-                    {s.completed ? '✅' : '❌'}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.84rem' }}>
-                      {s.exercise}
-                    </div>
-                    <div className="text-muted">
-                      {s.date} · {s.duration} min
-                      {s.loggedBy && ` · by ${s.loggedBy}`}
+              <div className="flex-between" style={{ marginBottom: 8 }}>
+                <span className="text-muted">Recovery progress</span>
+                <strong>{selected.progress}%</strong>
+              </div>
+              <ProgressBar value={selected.progress} />
+              <div className="divider" />
+              <div className="vitals-grid">
+                {[
+                  ['Caregiver', caregiver.name],
+                  ['Blood pressure', vitals?.bp],
+                  ['Heart rate', `${vitals?.heartRate} bpm`],
+                  ['Oxygen', `${vitals?.oxygenSat}%`],
+                  ['Mood', vitals?.mood],
+                  ['Assigned videos', assigned.length],
+                ].map(([label, value]) => (
+                  <div key={label} className="vital-cell">
+                    <div>
+                      <div className="vital-cell__label">{label}</div>
+                      <div className="vital-cell__value">{value}</div>
                     </div>
                   </div>
-                  {s.pain > 0 && (
-                    <Badge variant={s.pain >= 4 ? 'red' : 'warn'}>
-                      Pain {s.pain}
-                    </Badge>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* System alerts */}
           <div className="card">
             <div className="card__header">
-              <span className="card__title">⚠ System Alerts</span>
-              <Badge variant="red">{unreadAlerts}</Badge>
+              <span className="card__title">Recent weekly activity</span>
+              <Badge variant="green">{sessions.filter((s) => s.completed).length}/{sessions.length}</Badge>
             </div>
-            <div className="card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {alerts.map((a) => (
-                <Alert
-                  key={a.id}
-                  variant={a.type === 'warning' ? 'warn' : 'info'}
-                  icon={a.type === 'warning' ? '⚠️' : 'ℹ️'}
-                  style={{ marginBottom: 0 }}
-                >
-                  {a.msg}
-                </Alert>
+            <div className="card__body stack-list">
+              {[...sessions].reverse().slice(0, 5).map((session) => (
+                <div key={session.id} className="care-row">
+                  <div style={{ flex: 1 }}>
+                    <strong>{session.exercise}</strong>
+                    <span>{session.date} · {session.duration} min · by {session.loggedBy || 'unknown'}</span>
+                  </div>
+                  <Badge variant={session.completed ? 'green' : 'red'}>{session.completed ? 'Done' : 'Missed'}</Badge>
+                </div>
               ))}
             </div>
           </div>
@@ -207,321 +136,166 @@ const HPDashboard = () => {
   );
 };
 
-
-// ══════════════════════════════════════════════════════════════
-// HP EXERCISE PLAN
-// ══════════════════════════════════════════════════════════════
-/**
- * HPExercisePlan
- * ─────────────────────────────────────────────────────────────
- * Lets the health professional assign new exercises to the
- * patient and remove existing ones.
- *
- * Every change dispatches to the shared store and is therefore
- * immediately visible in the Patient and Caregiver portals.
- * ─────────────────────────────────────────────────────────────
- */
 const HPExercisePlan = () => {
-  const [state, dispatch] = useStore();
-  const { exercisePlan } = state;
+  const { state, dispatch, patients, currentUser } = useDoctorState();
+  const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+  const [focus, setFocus] = useState('All');
+  const [preview, setPreview] = useState(null);
+  const assigned = getAssignedExercises(state, selectedId);
+  const assignedIds = state.assignments[selectedId] || [];
+  const categories = useMemo(() => ['All', ...new Set(state.exerciseLibrary.map((exercise) => exercise.category))], [state.exerciseLibrary]);
+  const library = focus === 'All'
+    ? state.exerciseLibrary
+    : state.exerciseLibrary.filter((exercise) => exercise.category === focus || exercise.bodyPart === focus);
 
-  /* Controls the "Assign Exercise" modal */
-  const [showAdd, setShowAdd] = useState(false);
-
-  /* Controlled form state for the new exercise */
-  const [form, setForm] = useState({
-    name: '',
-    emoji: '💪',
-    sets: '',
-    freq: 'Daily',
-    category: 'Upper Limb',
-    difficulty: 'easy',
-    description: '',
-  });
-
-  /** Update a single form field. */
-  const setField = (key, value) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
-
-  /**
-   * Add the new exercise to the shared plan.
-   * The patient and caregiver portals will show it immediately.
-   */
-  const addExercise = () => {
-    if (!form.name.trim()) return;
-
+  const assignExercise = (exercise) => {
+    if (assignedIds.includes(exercise.id)) return;
     dispatch((s) => ({
       ...s,
-      exercisePlan: [
-        ...s.exercisePlan,
-        { ...form, id: `e${Date.now()}`, assignedBy: 'Dr. Kumaran' },
+      assignments: {
+        ...s.assignments,
+        [selectedId]: [...(s.assignments[selectedId] || []), exercise.id],
+      },
+      alerts: [
+        ...s.alerts,
+        {
+          id: `a${Date.now()}`,
+          patientId: selectedId,
+          type: 'info',
+          msg: `${currentUser.name} assigned ${exercise.name} to the therapy plan.`,
+          time: 'Just now',
+          read: false,
+        },
       ],
     }));
-
-    // Reset form and close modal
-    setForm({
-      name: '', emoji: '💪', sets: '', freq: 'Daily',
-      category: 'Upper Limb', difficulty: 'easy', description: '',
-    });
-    setShowAdd(false);
   };
 
-  /**
-   * Remove an exercise from the shared plan.
-   * Also visible immediately in patient / caregiver portals.
-   */
-  const removeExercise = (id) => {
+  const removeExercise = (exerciseId) => {
     dispatch((s) => ({
       ...s,
-      exercisePlan: s.exercisePlan.filter((e) => e.id !== id),
+      assignments: {
+        ...s.assignments,
+        [selectedId]: (s.assignments[selectedId] || []).filter((id) => id !== exerciseId),
+      },
     }));
   };
 
   return (
     <div>
-      {/* ── Assign modal ── */}
-      {showAdd && (
-        <Modal
-          title="Assign New Exercise"
-          onClose={() => setShowAdd(false)}
-          footer={
-            <>
-              <button
-                className="btn btn--outline"
-                onClick={() => setShowAdd(false)}
-              >
-                Cancel
-              </button>
-              <button className="btn btn--primary" onClick={addExercise}>
-                ✓ Assign to Patient
-              </button>
-            </>
-          }
-        >
-          <div className="form-grid">
-            {/* Exercise name */}
-            <div className="field form-grid--full">
-              <label>Exercise Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-                placeholder="e.g. Wrist Flexion"
-              />
-            </div>
+      <div className="doctor-toolbar anim-fade-up anim-delay-1">
+        <Alert variant="info" icon="Plan" style={{ margin: 0, flex: 1 }}>
+          Assign exercises by body focus. The patient and caregiver portals update instantly.
+        </Alert>
+        <PatientSelector patients={patients} selectedId={selectedId} onSelect={setSelectedId} />
+        <select className="select-control" value={focus} onChange={(e) => setFocus(e.target.value)}>
+          {categories.map((category) => <option key={category}>{category}</option>)}
+        </select>
+      </div>
 
-            {/* Emoji + sets */}
-            <div className="field">
-              <label>Emoji Icon</label>
-              <input
-                value={form.emoji}
-                onChange={(e) => setField('emoji', e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Sets / Reps</label>
-              <input
-                value={form.sets}
-                onChange={(e) => setField('sets', e.target.value)}
-                placeholder="e.g. 3 × 10"
-              />
-            </div>
-
-            {/* Frequency */}
-            <div className="field">
-              <label>Frequency</label>
-              <select
-                value={form.freq}
-                onChange={(e) => setField('freq', e.target.value)}
-              >
-                {['Daily', '3x / week', '2x / week', 'Weekly'].map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category */}
-            <div className="field">
-              <label>Category</label>
-              <select
-                value={form.category}
-                onChange={(e) => setField('category', e.target.value)}
-              >
-                {['Upper Limb', 'Lower Limb', 'Balance', 'Speech', 'Cognitive'].map(
-                  (o) => <option key={o}>{o}</option>
-                )}
-              </select>
-            </div>
-
-            {/* Difficulty */}
-            <div className="field">
-              <label>Difficulty</label>
-              <select
-                value={form.difficulty}
-                onChange={(e) => setField('difficulty', e.target.value)}
-              >
-                <option value="easy">Easy</option>
-                <option value="med">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-
-            {/* Instructions */}
-            <div className="field form-grid--full">
-              <label>Patient Instructions</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setField('description', e.target.value)}
-                placeholder="Describe how the patient should perform this exercise…"
-              />
-            </div>
+      <div className="grid-2 anim-fade-up anim-delay-2">
+        <div className="card">
+          <div className="card__header">
+            <span className="card__title">Current assigned plan</span>
+            <Badge variant="blue">{assigned.length}</Badge>
           </div>
+          <div className="card__body stack-list">
+            {assigned.map((exercise) => (
+              <div key={exercise.id} className="care-row">
+                <div className="care-row__icon">{exercise.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <strong>{exercise.name}</strong>
+                  <span>{exercise.bodyPart} · {exercise.sets} · {exercise.freq}</span>
+                </div>
+                <Badge variant={difficultyVariant(exercise.difficulty)}>{exercise.difficulty}</Badge>
+                <button className="btn btn--outline btn--xs" onClick={() => removeExercise(exercise.id)}>Remove</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card__header">
+            <span className="card__title">Exercise video library</span>
+            <Badge variant="green">{library.length} videos</Badge>
+          </div>
+          <div className="card__body library-list">
+            {library.slice(0, 42).map((exercise) => (
+              <div key={exercise.id} className="library-item">
+                <button className="library-item__main" onClick={() => setPreview(exercise)}>
+                  <strong>{exercise.name}</strong>
+                  <span>{exercise.category} · {exercise.bodyPart} · {exercise.duration} min</span>
+                </button>
+                <button
+                  className="btn btn--primary btn--xs"
+                  disabled={assignedIds.includes(exercise.id)}
+                  onClick={() => assignExercise(exercise)}
+                >
+                  {assignedIds.includes(exercise.id) ? 'Assigned' : 'Assign'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {preview && (
+        <Modal title={preview.name} wide onClose={() => setPreview(null)}>
+          <iframe
+            className="exercise-detail__video"
+            src={preview.videoUrl}
+            title={`${preview.name} rehabilitation video`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+          <p style={{ marginTop: 14, lineHeight: 1.7 }}>{preview.description}</p>
+          <a className="btn btn--outline btn--sm mt-3" href={preview.videoSearchUrl} target="_blank" rel="noreferrer">
+            Open more real videos
+          </a>
         </Modal>
       )}
-
-      {/* ── Header row: info alert + add button ── */}
-      <div
-        className="flex-between anim-fade-up anim-delay-1"
-        style={{ marginBottom: 18 }}
-      >
-        <Alert
-          variant="info"
-          icon="📋"
-          style={{ margin: 0, flex: 1, marginRight: 14 }}
-        >
-          Changes to the exercise plan sync <strong>instantly</strong> to the
-          patient and caregiver portals.
-        </Alert>
-        <button
-          className="btn btn--primary"
-          onClick={() => setShowAdd(true)}
-        >
-          + Assign Exercise
-        </button>
-      </div>
-
-      {/* ── Exercise list ── */}
-      <div
-        className="anim-fade-up anim-delay-2"
-        style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-      >
-        {exercisePlan.map((ex) => (
-          <div
-            key={ex.id}
-            className="card"
-            style={{
-              padding: '14px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-            }}
-          >
-            <span style={{ fontSize: '1.6rem' }}>{ex.emoji}</span>
-
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>
-                {ex.name}
-              </div>
-              <div className="text-muted">
-                {ex.category} · {ex.sets} · {ex.freq} · Assigned by{' '}
-                {ex.assignedBy}
-              </div>
-              {ex.description && (
-                <div
-                  style={{
-                    fontSize: '0.78rem',
-                    color: 'var(--clr-fg)',
-                    marginTop: 4,
-                    fontStyle: 'italic',
-                  }}
-                >
-                  {ex.description}
-                </div>
-              )}
-            </div>
-
-            <Badge variant={diffBadge(ex.difficulty)}>{ex.difficulty}</Badge>
-
-            <button
-              className="btn btn--outline btn--xs"
-              style={{ color: 'var(--clr-danger)', borderColor: '#fcc' }}
-              onClick={() => removeExercise(ex.id)}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-
-        {exercisePlan.length === 0 && (
-          <div
-            className="text-center text-muted"
-            style={{ padding: '30px 0' }}
-          >
-            No exercises assigned yet. Click "+ Assign Exercise" to add one.
-          </div>
-        )}
-      </div>
     </div>
   );
 };
 
-
-// ══════════════════════════════════════════════════════════════
-// HP REPORTS
-// ══════════════════════════════════════════════════════════════
-/**
- * HPReports
- * ─────────────────────────────────────────────────────────────
- * Full session-log table, vitals summary, and clinical notes.
- * Read-only view — data is pushed here by patient and caregiver.
- * ─────────────────────────────────────────────────────────────
- */
 const HPReports = () => {
-  const [state] = useStore();
-  const { sessions, vitals: v, patientProfile: p } = state;
-
-  const completedCount = sessions.filter((s) => s.completed).length;
+  const { state, patients } = useDoctorState();
+  const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+  const patient = getPatient(state, selectedId);
+  const sessions = getPatientSessions(state, selectedId);
+  const vitals = state.vitals[selectedId];
+  const medication = state.medications[selectedId] || [];
+  const history = state.vitalHistory.filter((entry) => entry.patientId === selectedId).slice(-8).reverse();
 
   return (
     <div>
-      <div className="grid-2 anim-fade-up anim-delay-1">
-        {/* ── Full session table ── */}
+      <div className="doctor-toolbar anim-fade-up anim-delay-1">
+        <Alert variant="info" icon="Report" style={{ margin: 0, flex: 1 }}>
+          Weekly activity, recovery, medication, pain, and caregiver-entered vitals for each patient.
+        </Alert>
+        <PatientSelector patients={patients} selectedId={selectedId} onSelect={setSelectedId} />
+      </div>
+
+      <div className="grid-2 anim-fade-up anim-delay-2">
         <div className="card">
           <div className="card__header">
-            <span className="card__title">Full Session Log</span>
-            <button className="btn btn--outline btn--sm">📄 Export</button>
+            <span className="card__title">{patient.name} weekly activity</span>
+            <Badge variant="blue">{sessions.filter((s) => s.completed).length}/{sessions.length}</Badge>
           </div>
           <div className="card__body" style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  {['Date', 'Exercise', 'Duration', 'Status', 'Pain', 'Logged By'].map(
-                    (h) => <th key={h}>{h}</th>
-                  )}
+                  {['Date', 'Exercise', 'Status', 'Pain', 'Logged by'].map((heading) => <th key={heading}>{heading}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {sessions.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.date}</td>
-                    <td style={{ fontWeight: 600 }}>{s.exercise}</td>
-                    <td>{s.duration} min</td>
-                    <td>
-                      <Badge variant={s.completed ? 'green' : 'red'}>
-                        {s.completed ? 'Done' : 'Missed'}
-                      </Badge>
-                    </td>
-                    <td>
-                      {s.pain > 0 ? (
-                        <Badge variant={s.pain >= 4 ? 'red' : 'warn'}>
-                          {s.pain}/5
-                        </Badge>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td style={{ textTransform: 'capitalize' }}>
-                      {s.loggedBy || '—'}
-                    </td>
+                {sessions.map((session) => (
+                  <tr key={session.id}>
+                    <td>{session.date}</td>
+                    <td>{session.exercise}</td>
+                    <td><Badge variant={session.completed ? 'green' : 'red'}>{session.completed ? 'Done' : 'Missed'}</Badge></td>
+                    <td>{session.pain > 0 ? <Badge variant={session.pain >= 4 ? 'red' : 'warn'}>{session.pain}/5</Badge> : '-'}</td>
+                    <td>{session.loggedBy || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -529,94 +303,60 @@ const HPReports = () => {
           </div>
         </div>
 
-        {/* ── Right column ── */}
         <div className="card-stack">
-          {/* Vitals summary */}
           <div className="card">
             <div className="card__header">
-              <span className="card__title">Vitals Summary</span>
-              <span className="text-muted" style={{ fontSize: '0.73rem' }}>
-                {v.lastUpdated}
-              </span>
+              <span className="card__title">Clinical summary</span>
+              <Badge variant={riskVariant(patient.risk)}>{patient.risk}</Badge>
             </div>
             <div className="card__body">
-              {[
-                ['💓 Heart Rate',      `${v.heartRate} bpm`],
-                ['🩺 Blood Pressure',  v.bp],
-                ['🌡️ Temperature',    `${v.temp} °C`],
-                ['🫀 O₂ Saturation',  `${v.oxygenSat}%`],
-                ['⚖️ Weight',          `${v.weight} kg`],
-              ].map(([k, val]) => (
-                <div
-                  key={k}
-                  className="flex-between"
-                  style={{
-                    padding: '7px 0',
-                    borderBottom: '1px solid var(--clr-border)',
-                    fontSize: '0.84rem',
-                  }}
-                >
-                  <span className="text-muted">{k}</span>
-                  <strong>{val}</strong>
-                </div>
-              ))}
+              <div className="flex-between" style={{ marginBottom: 8 }}>
+                <span className="text-muted">Recovery progress</span>
+                <strong>{patient.progress}%</strong>
+              </div>
+              <ProgressBar value={patient.progress} />
+              <div className="divider" />
+              <div className="vitals-grid">
+                {[
+                  ['BP', vitals?.bp],
+                  ['Heart rate', `${vitals?.heartRate} bpm`],
+                  ['Oxygen', `${vitals?.oxygenSat}%`],
+                  ['Mood', vitals?.mood],
+                ].map(([label, value]) => (
+                  <div key={label} className="vital-cell">
+                    <div>
+                      <div className="vital-cell__label">{label}</div>
+                      <div className="vital-cell__value">{value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Clinical summary card */}
           <div className="card">
             <div className="card__header">
-              <span className="card__title">Clinical Summary</span>
+              <span className="card__title">Medication and vitals history</span>
             </div>
-            <div className="card__body">
-              {/* Recovery progress */}
-              <div className="flex-between" style={{ marginBottom: 8 }}>
-                <span className="text-muted">Overall recovery</span>
-                <strong style={{ color: 'var(--clr-primary)' }}>
-                  {p.progress}%
-                </strong>
-              </div>
-              <ProgressBar value={p.progress} />
-
-              {/* Quick stats */}
-              <div className="divider" />
-              {[
-                ['Sessions completed', `${completedCount} / ${p.targetSessions}`],
-                ['Active streak',      `${p.streak} days`],
-                ['Condition',          p.condition],
-                ['Age',                `${p.age} years`],
-              ].map(([k, val]) => (
-                <div
-                  key={k}
-                  className="flex-between"
-                  style={{
-                    padding: '6px 0',
-                    borderBottom: '1px solid var(--clr-border)',
-                    fontSize: '0.84rem',
-                  }}
-                >
-                  <span className="text-muted">{k}</span>
-                  <strong>{val}</strong>
+            <div className="card__body stack-list">
+              {medication.map((med) => (
+                <div key={med.id} className="care-row">
+                  <div style={{ flex: 1 }}>
+                    <strong>{med.name}</strong>
+                    <span>{med.dose} · {med.schedule}</span>
+                  </div>
+                  <Badge variant={med.takenToday ? 'green' : 'warn'}>{med.takenToday ? 'Taken' : 'Due'}</Badge>
                 </div>
               ))}
-
-              {/* Free-text clinical note */}
-              <div
-                style={{
-                  marginTop: 14,
-                  fontSize: '0.84rem',
-                  lineHeight: 1.7,
-                  color: 'var(--clr-fg)',
-                  background: 'var(--clr-bg)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '10px 14px',
-                }}
-              >
-                Patient shows <strong>consistent improvement</strong>. Sessions
-                completed: {completedCount}/{sessions.length}. Pain levels remain
-                low. Recommend progressing to{' '}
-                <strong>balance exercises</strong> at the next review.
-              </div>
+              <div className="divider" />
+              {history.map((entry) => (
+                <div key={entry.id} className="care-row">
+                  <div style={{ flex: 1 }}>
+                    <strong>{entry.date}</strong>
+                    <span>BP {entry.bp} · HR {entry.heartRate} · O2 {entry.oxygenSat}% · {entry.mood}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -625,6 +365,4 @@ const HPReports = () => {
   );
 };
 
-
-// ── Named exports ─────────────────────────────────────────────
 export { HPDashboard, HPExercisePlan, HPReports };

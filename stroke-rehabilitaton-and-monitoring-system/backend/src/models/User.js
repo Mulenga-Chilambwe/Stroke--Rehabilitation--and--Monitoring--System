@@ -31,6 +31,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "#1a7f74",
     },
+    patientId: {
+      type: String,
+      default: "",
+    },
+    doctorId: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

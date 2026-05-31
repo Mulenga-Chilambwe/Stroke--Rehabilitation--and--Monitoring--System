@@ -6,6 +6,7 @@ const demoUsers = [
     color: "#1a7f74",
     email: "mercy@patient.zm",
     password: "patient123",
+    patientId: "p1",
   },
   {
     role: "caregiver",
@@ -14,6 +15,7 @@ const demoUsers = [
     color: "#d97706",
     email: "john@caregiver.zm",
     password: "caregiver123",
+    patientId: "p1",
   },
   {
     role: "hp",
@@ -22,6 +24,7 @@ const demoUsers = [
     color: "#3b5bdb",
     email: "kumaran@cbu.ac.zm",
     password: "doctor123",
+    doctorId: "d1",
   },
 ];
 

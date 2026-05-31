@@ -65,6 +65,16 @@ export const AuthProvider = ({ children }) => {
       saveSession(data);
       return { ok: true };
     } catch (error) {
+      const demoUser = Object.values(DEMO_USERS).find(
+        (user) => user.email === email && user.password === password
+      );
+
+      if (demoUser) {
+        const { password: _password, ...publicDemoUser } = demoUser;
+        saveSession({ token: 'demo-offline-token', user: publicDemoUser });
+        return { ok: true };
+      }
+
       return { ok: false, message: error.message };
     }
   };
@@ -73,7 +83,7 @@ export const AuthProvider = ({ children }) => {
   const loginAsRole = (role) => {
     const demoUser = DEMO_USERS[role];
     const { password, ...publicDemoUser } = demoUser;
-    setCurrentUser(publicDemoUser);
+    saveSession({ token: 'demo-offline-token', user: publicDemoUser });
   };
 
   const register = async ({ name, email, password, role }) => {

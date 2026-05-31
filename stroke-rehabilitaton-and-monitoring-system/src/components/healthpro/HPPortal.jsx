@@ -1,54 +1,42 @@
-/**
- * components/healthpro/HPPortal.jsx
- * Top-level shell for the Health Professional portal.
- */
 import React, { useState } from 'react';
-import { useStore }    from '../../context/StoreContext';
-import { useAuth }     from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import { useStore } from '../../context/StoreContext';
 import { PageWrapper } from '../shared/UI';
-
-// All three HP pages live in one file as named exports
 import { HPDashboard, HPExercisePlan, HPReports } from '../../pages/healthpro/HPPages';
 import Messages from '../shared/Messages';
-
 import '../../styles/healthpro.css';
 
 const NAV_SECTIONS = [
   {
     section: 'Clinical',
     items: [
-      { id: 'dashboard', icon: '📊', label: 'Dashboard'       },
-      { id: 'plan',      icon: '💪', label: 'Exercise Plan'   },
-      { id: 'reports',   icon: '📋', label: 'Patient Reports' },
+      { id: 'dashboard', icon: 'Dash', label: 'Dashboard' },
+      { id: 'plan', icon: 'Plan', label: 'Assign Exercises' },
+      { id: 'reports', icon: 'Report', label: 'Patient Reports' },
     ],
   },
   {
     section: 'Communication',
-    items: [
-      { id: 'messages', icon: '💬', label: 'Messages' },
-    ],
+    items: [{ id: 'messages', icon: 'Chat', label: 'Messages' }],
   },
 ];
 
 const PAGE_TITLES = {
   dashboard: 'Clinical Dashboard',
-  plan:      'Exercise Plan',
-  reports:   'Patient Reports',
-  messages:  'Messages',
+  plan: 'Exercise Assignment',
+  reports: 'Weekly Patient Activity',
+  messages: 'Care Team Messages',
 };
 
 const HPPortal = () => {
   const { currentUser, logout } = useAuth();
-  const [state]  = useStore();
+  const [state] = useStore();
   const [page, setPage] = useState('dashboard');
+  const unreadCount = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
 
-  const unreadCount = state.messages.filter(
-    (m) => m.to === 'hp' && !m.read
-  ).length;
-
-  const navWithBadge = NAV_SECTIONS.map((sec) => ({
-    ...sec,
-    items: sec.items.map((item) =>
+  const navWithBadge = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.map((item) =>
       item.id === 'messages' ? { ...item, badge: unreadCount } : item
     ),
   }));
@@ -56,10 +44,10 @@ const HPPortal = () => {
   const renderPage = () => {
     switch (page) {
       case 'dashboard': return <HPDashboard />;
-      case 'plan':      return <HPExercisePlan />;
-      case 'reports':   return <HPReports />;
-      case 'messages':  return <Messages currentUser={currentUser} />;
-      default:          return <HPDashboard />;
+      case 'plan': return <HPExercisePlan />;
+      case 'reports': return <HPReports />;
+      case 'messages': return <Messages currentUser={currentUser} />;
+      default: return <HPDashboard />;
     }
   };
 

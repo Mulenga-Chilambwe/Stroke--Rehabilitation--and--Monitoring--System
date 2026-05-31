@@ -25,26 +25,38 @@ import React, {
 } from 'react';
 
 import {
-  INITIAL_PATIENT_PROFILE,
-  INITIAL_CAREGIVER_PROFILE,
-  INITIAL_HP_PROFILE,
-  INITIAL_EXERCISE_PLAN,
+  EXERCISE_LIBRARY,
+  INITIAL_PATIENTS,
+  INITIAL_CAREGIVERS,
+  INITIAL_DOCTORS,
+  INITIAL_ASSIGNMENTS,
   INITIAL_SESSIONS,
   INITIAL_MESSAGES,
   INITIAL_VITALS,
+  INITIAL_VITAL_HISTORY,
+  INITIAL_MEDICATIONS,
   INITIAL_ALERTS,
   INITIAL_NEXT_SESSION,
 } from '../data/mockData';
 
 // ─── Build the initial store state ───────────────────────────
 const buildInitialState = () => ({
-  patientProfile:   { ...INITIAL_PATIENT_PROFILE },
-  caregiverProfile: { ...INITIAL_CAREGIVER_PROFILE },
-  hpProfile:        { ...INITIAL_HP_PROFILE },
-  exercisePlan:     [...INITIAL_EXERCISE_PLAN],
+  exerciseLibrary:  [...EXERCISE_LIBRARY],
+  patients:         [...INITIAL_PATIENTS],
+  caregivers:       [...INITIAL_CAREGIVERS],
+  doctors:          [...INITIAL_DOCTORS],
+  assignments:      { ...INITIAL_ASSIGNMENTS },
+  patientProfile:   { ...INITIAL_PATIENTS[0] },
+  caregiverProfile: { ...INITIAL_CAREGIVERS[0] },
+  hpProfile:        { ...INITIAL_DOCTORS[0] },
+  exercisePlan:     EXERCISE_LIBRARY.filter((exercise) =>
+    INITIAL_ASSIGNMENTS.p1.includes(exercise.id)
+  ),
   sessions:         [...INITIAL_SESSIONS],
   messages:         [...INITIAL_MESSAGES],
   vitals:           { ...INITIAL_VITALS },
+  vitalHistory:     [...INITIAL_VITAL_HISTORY],
+  medications:      { ...INITIAL_MEDICATIONS },
   alerts:           [...INITIAL_ALERTS],
   nextSession:      { ...INITIAL_NEXT_SESSION },
 });

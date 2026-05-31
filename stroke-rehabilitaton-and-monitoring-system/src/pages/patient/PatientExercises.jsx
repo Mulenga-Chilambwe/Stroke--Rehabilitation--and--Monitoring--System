@@ -1,180 +1,185 @@
-/**
- * pages/patient/PatientExercises.jsx
- * ─────────────────────────────────────────────────────────────
- * Displays the patient's assigned exercise plan as a grid.
- * Tapping a card opens a modal with instructions and a
- * pain-level selector, then logs the session to shared state.
- *
- * Fix: uses dynamic TODAY date and creates sessions on the fly.
- * ─────────────────────────────────────────────────────────────
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { Alert, Badge, Modal } from '../../components/shared/UI';
-
-// Dynamic date — always today
-const TODAY = new Date().toISOString().split('T')[0];
-
-const diffBadge = (d) =>
-  d === 'easy' ? 'green' : d === 'med' ? 'warn' : 'red';
-
-const diffBg = (d) =>
-  d === 'easy' ? '#e6f9f0' : d === 'med' ? '#fff5e6' : '#fdeaea';
+import {
+  difficultyVariant,
+  getAssignedExercises,
+  getPatientIdForUser,
+  todayKey,
+} from '../../utils/care';
 
 const PatientExercises = () => {
+  const { currentUser } = useAuth();
   const [state, dispatch] = useStore();
-  const { exercisePlan } = state;
+  const patientId = getPatientIdForUser(currentUser);
+  const assigned = getAssignedExercises(state, patientId);
 
   const [selected, setSelected] = useState(null);
-  const [pain, setPain] = useState(0);
-
-  const categories = ['All', ...new Set(exercisePlan.map((e) => e.category))];
+  const [tab, setTab] = useState('assigned');
   const [filter, setFilter] = useState('All');
+  const [pain, setPain] = useState(0);
+  const [notes, setNotes] = useState('');
 
-  const filtered =
-    filter === 'All'
-      ? exercisePlan
-      : exercisePlan.filter((e) => e.category === filter);
+  const categories = useMemo(
+    () => ['All', ...new Set(state.exerciseLibrary.map((exercise) => exercise.category))],
+    [state.exerciseLibrary]
+  );
 
-  /**
-   * Log a completed session.
-   * Creates a new session record if one doesn't exist for today,
-   * or updates the existing one.
-   */
+  const source = tab === 'assigned' ? assigned : state.exerciseLibrary;
+  const filtered = filter === 'All'
+    ? source
+    : source.filter((exercise) => exercise.category === filter);
+
   const logSession = () => {
-    const exists = state.sessions.find(
-      (s) => s.exercise === selected.name && s.date === TODAY
-    );
+    if (!selected) return;
+    const today = todayKey();
 
-    dispatch((s) => ({
-      ...s,
-      sessions: exists
-        ? s.sessions.map((sess) =>
-            sess.exercise === selected.name && sess.date === TODAY
-              ? { ...sess, completed: true, pain, loggedBy: 'patient' }
-              : sess
-          )
-        : [
-            ...s.sessions,
-            {
-              id: `s${Date.now()}`,
-              date: TODAY,
-              exercise: selected.name,
-              duration: 20,
-              completed: true,
-              pain,
-              notes: '',
-              loggedBy: 'patient',
-            },
-          ],
-    }));
+    dispatch((s) => {
+      const existing = s.sessions.find(
+        (session) =>
+          session.patientId === patientId &&
+          session.exerciseId === selected.id &&
+          session.date === today
+      );
+
+      const sessionRecord = {
+        patientId,
+        exerciseId: selected.id,
+        exercise: selected.name,
+        duration: selected.duration,
+        completed: true,
+        pain,
+        notes,
+        loggedBy: 'patient',
+      };
+
+      return {
+        ...s,
+        sessions: existing
+          ? s.sessions.map((session) =>
+              session.id === existing.id ? { ...session, ...sessionRecord } : session
+            )
+          : [...s.sessions, { id: `s${Date.now()}`, date: today, ...sessionRecord }],
+      };
+    });
 
     setSelected(null);
     setPain(0);
+    setNotes('');
+  };
+
+  const openExercise = (exercise) => {
+    setSelected(exercise);
+    setPain(0);
+    setNotes('');
   };
 
   return (
     <div>
-      <Alert variant="info" icon="💡" style={{ marginBottom: 18 }}>
-        Your exercise plan is assigned by <strong>Dr. Kumaran</strong>. Tap any
-        exercise for full instructions and to log your session.
+      <Alert variant="info" icon="Video" style={{ marginBottom: 18 }}>
+        Watch your assigned therapy videos or browse the full library of {state.exerciseLibrary.length} short remote-physio videos.
       </Alert>
 
-      {/* Category filters */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            className={`btn btn--sm ${filter === cat ? 'btn--primary' : 'btn--outline'}`}
-            onClick={() => setFilter(cat)}
-          >
-            {cat}
+      <div className="therapy-toolbar anim-fade-up anim-delay-1">
+        <div className="segmented">
+          <button className={tab === 'assigned' ? 'active' : ''} onClick={() => setTab('assigned')}>
+            Assigned plan
           </button>
-        ))}
+          <button className={tab === 'library' ? 'active' : ''} onClick={() => setTab('library')}>
+            120-video library
+          </button>
+        </div>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="select-control">
+          {categories.map((category) => (
+            <option key={category}>{category}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Exercise grid */}
-      <div className="grid-3">
-        {filtered.map((ex) => {
+      <div className="video-grid anim-fade-up anim-delay-2">
+        {filtered.map((exercise) => {
           const done = state.sessions.some(
-            (s) => s.exercise === ex.name && s.date === TODAY && s.completed
+            (session) =>
+              session.patientId === patientId &&
+              session.exerciseId === exercise.id &&
+              session.date === todayKey() &&
+              session.completed
           );
 
           return (
-            <div
-              key={ex.id}
-              className="exercise-card"
-              onClick={() => { setSelected(ex); setPain(0); }}
-            >
-              <div
-                className="exercise-card__thumb"
-                style={{ background: diffBg(ex.difficulty) }}
-              >
-                {ex.emoji}
+            <button key={exercise.id} className="video-card" onClick={() => openExercise(exercise)}>
+              <div className="video-card__media video-card__media--youtube">
+                <div className="video-card__initial">{exercise.icon}</div>
+                <span className="video-card__play">Play</span>
+                <span className="video-card__duration">{exercise.duration} min</span>
               </div>
-              <div className="exercise-card__body">
-                <div className="exercise-card__name">{ex.name}</div>
-                <div className="exercise-card__meta">
-                  {ex.category} · {ex.sets} · {ex.freq}
-                </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Badge variant={diffBadge(ex.difficulty)}>
-                    {ex.difficulty === 'easy' ? 'Easy' : ex.difficulty === 'med' ? 'Medium' : 'Hard'}
-                  </Badge>
-                  {done && <Badge variant="green">✓ Done today</Badge>}
+              <div className="video-card__body">
+                <div className="video-card__title">{exercise.name}</div>
+                <div className="video-card__meta">{exercise.bodyPart} · {exercise.sets}</div>
+                <div className="chip-row">
+                  <Badge variant={difficultyVariant(exercise.difficulty)}>{exercise.difficulty}</Badge>
+                  <Badge variant="blue">{exercise.category}</Badge>
+                  {done && <Badge variant="green">Done today</Badge>}
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* Exercise detail modal */}
       {selected && (
         <Modal
-          title={`${selected.emoji} ${selected.name}`}
+          wide
+          title={selected.name}
           onClose={() => setSelected(null)}
           footer={
             <>
-              <button className="btn btn--outline" onClick={() => setSelected(null)}>
-                Close
-              </button>
-              <button className="btn btn--primary" onClick={logSession}>
-                ✓ Mark as Complete
-              </button>
+              <button className="btn btn--outline" onClick={() => setSelected(null)}>Close</button>
+              <button className="btn btn--primary" onClick={logSession}>Mark complete</button>
             </>
           }
         >
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            <Badge variant="muted">{selected.category}</Badge>
-            <Badge variant="blue">{selected.sets}</Badge>
-            <Badge variant="muted">📅 {selected.freq}</Badge>
-            <Badge variant={diffBadge(selected.difficulty)}>{selected.difficulty}</Badge>
-          </div>
-
-          <p style={{ fontSize: '0.88rem', lineHeight: 1.7, marginBottom: 18 }}>
-            {selected.description || 'Perform this exercise slowly and with control.'}
-          </p>
-
-          <Alert variant="warn" icon="⚠️" style={{ marginBottom: 18 }}>
-            Always have your caregiver nearby. Stop immediately if you feel sharp
-            pain or dizziness.
-          </Alert>
-
-          <div style={{ fontWeight: 600, fontSize: '0.86rem', marginBottom: 8 }}>
-            Rate your pain level (0 = none, 5 = severe)
-          </div>
-          <div className="pain-scale">
-            {[0, 1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                className={`pain-btn ${pain === n ? 'selected' : ''}`}
-                onClick={() => setPain(n)}
-              >
-                {n}
-              </button>
-            ))}
+          <div className="exercise-detail">
+            <iframe
+              className="exercise-detail__video"
+              src={selected.videoUrl}
+              title={`${selected.name} rehabilitation video`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+            <div>
+              <div className="chip-row" style={{ marginBottom: 12 }}>
+                <Badge variant="blue">{selected.category}</Badge>
+                <Badge variant="muted">{selected.bodyPart}</Badge>
+                <Badge variant={difficultyVariant(selected.difficulty)}>{selected.difficulty}</Badge>
+              </div>
+              <p style={{ lineHeight: 1.7, marginBottom: 12 }}>{selected.description}</p>
+              <Alert variant="warn" icon="Safety" style={{ marginBottom: 16 }}>
+                {selected.safety}
+              </Alert>
+              <a className="btn btn--outline btn--sm" href={selected.videoSearchUrl} target="_blank" rel="noreferrer" style={{ marginBottom: 16 }}>
+                Open more real videos
+              </a>
+              <div className="field" style={{ marginBottom: 12 }}>
+                <label>Pain level after exercise</label>
+                <div className="pain-scale">
+                  {[0, 1, 2, 3, 4, 5].map((level) => (
+                    <button
+                      key={level}
+                      className={`pain-btn ${pain === level ? 'selected' : ''}`}
+                      onClick={() => setPain(level)}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <label>Notes for your clinician</label>
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How did it feel today?" />
+              </div>
+            </div>
           </div>
         </Modal>
       )}

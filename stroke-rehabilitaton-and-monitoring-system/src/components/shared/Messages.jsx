@@ -1,68 +1,68 @@
-/**
- * components/shared/Messages.jsx
- * ─────────────────────────────────────────────────────────────
- * In-app messaging panel used by all three portals.
- *
- * Each role can select a recipient from the available choices
- * and see / send messages in a chat-bubble layout.
- * All messages are written into the shared store so they appear
- * immediately in the recipient's portal (simulating real-time sync).
- * ─────────────────────────────────────────────────────────────
- */
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
+import {
+  getCaregiverForPatient,
+  getDoctorForPatient,
+  getDoctorIdForUser,
+  getPatient,
+  getPatientIdForUser,
+} from '../../utils/care';
 
-/** Human-readable display names for each role. */
-const ROLE_NAMES = {
-  patient:   'Mercy Banda (Patient)',
-  caregiver: 'John Banda (Caregiver)',
-  hp:        'Dr. Kumaran (Clinician)',
+const roleLabel = {
+  patient: 'Patient',
+  caregiver: 'Caregiver',
+  hp: 'Health Professional',
 };
 
-/**
- * Messages
- * Props:
- *   currentUser – { role, name, ... }
- */
 const Messages = ({ currentUser }) => {
   const [state, dispatch] = useStore();
-
-  // Default recipient: patients / caregivers talk to hp; hp talks to patient
-  const defaultRecipient =
-    currentUser.role === 'patient'   ? 'hp'
-    : currentUser.role === 'caregiver' ? 'hp'
-    : 'patient';
-
-  const [recipient, setRecipient] = useState(defaultRecipient);
+  const doctorId = getDoctorIdForUser(currentUser);
+  const defaultPatientId = getPatientIdForUser(currentUser);
+  const doctorPatients = state.patients.filter((patient) => patient.doctorId === doctorId);
+  const [patientId, setPatientId] = useState(defaultPatientId);
+  const [recipient, setRecipient] = useState(currentUser.role === 'hp' ? 'patient' : 'hp');
   const [text, setText] = useState('');
-
-  // Scroll to bottom when messages change
   const bottomRef = useRef(null);
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [state.messages, recipient]);
 
-  /** Filter to messages in the current conversation thread. */
-  const thread = state.messages.filter(
-    (m) =>
-      (m.from === currentUser.role && m.to === recipient) ||
-      (m.from === recipient       && m.to === currentUser.role)
+  const patient = getPatient(state, patientId);
+  const caregiver = getCaregiverForPatient(state, patientId);
+  const doctor = getDoctorForPatient(state, patientId);
+
+  const names = useMemo(
+    () => ({
+      patient: `${patient.name} (Patient)`,
+      caregiver: `${caregiver.name} (Caregiver)`,
+      hp: `${doctor.name} (Doctor)`,
+    }),
+    [patient.name, caregiver.name, doctor.name]
   );
 
-  /** Mark unread messages from the selected thread as read. */
+  const recipientOptions = ['patient', 'caregiver', 'hp'].filter((role) => role !== currentUser.role);
+  const thread = state.messages.filter(
+    (message) =>
+      message.patientId === patientId &&
+      ((message.from === currentUser.role && message.to === recipient) ||
+        (message.from === recipient && message.to === currentUser.role))
+  );
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [thread.length, recipient, patientId]);
+
   useEffect(() => {
     dispatch((s) => ({
       ...s,
-      messages: s.messages.map((m) =>
-        m.from === recipient && m.to === currentUser.role && !m.read
-          ? { ...m, read: true }
-          : m
+      messages: s.messages.map((message) =>
+        message.patientId === patientId &&
+        message.from === recipient &&
+        message.to === currentUser.role &&
+        !message.read
+          ? { ...message, read: true }
+          : message
       ),
     }));
-  }, [recipient, dispatch, currentUser.role]);
+  }, [patientId, recipient, currentUser.role, dispatch]);
 
-  /** Send a new message. */
   const sendMessage = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -73,6 +73,7 @@ const Messages = ({ currentUser }) => {
         ...s.messages,
         {
           id: `m${Date.now()}`,
+          patientId,
           from: currentUser.role,
           to: recipient,
           fromName: currentUser.name,
@@ -82,107 +83,71 @@ const Messages = ({ currentUser }) => {
         },
       ],
     }));
-
     setText('');
   };
 
-  /** Allow sending with Enter (Shift+Enter for newline). */
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  // Recipients available to this user (everyone except themselves)
-  const recipientOptions = Object.entries(ROLE_NAMES).filter(
-    ([role]) => role !== currentUser.role
-  );
-
   return (
     <div className="card anim-fade-up" style={{ overflow: 'hidden' }}>
-      {/* ── Header ── */}
-      <div className="card__header" style={{ paddingBottom: 14 }}>
-        <span className="card__title">💬 Messages</span>
-
-        {/* Recipient selector */}
-        <select
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-          style={{
-            padding: '5px 10px',
-            borderRadius: 6,
-            border: '1.5px solid var(--clr-border)',
-            fontSize: '0.8rem',
-            background: 'var(--clr-card)',
-            color: 'var(--clr-fg)',
-            cursor: 'pointer',
-          }}
-        >
-          {recipientOptions.map(([role, name]) => (
-            <option key={role} value={role}>
-              {name}
-            </option>
-          ))}
-        </select>
+      <div className="card__header message-header">
+        <div>
+          <span className="card__title">Care team messages</span>
+          <p className="text-muted">Case thread for {patient.name}</p>
+        </div>
+        <div className="message-controls">
+          {currentUser.role === 'hp' && (
+            <select value={patientId} onChange={(e) => setPatientId(e.target.value)} className="select-control">
+              {doctorPatients.map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+          )}
+          <select value={recipient} onChange={(e) => setRecipient(e.target.value)} className="select-control">
+            {recipientOptions.map((role) => (
+              <option key={role} value={role}>{names[role]}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* ── Message thread ── */}
-      <div className="chat-messages">
+      <div className="conversation-strip">
+        {['patient', 'caregiver', 'hp'].map((role) => (
+          <div key={role} className={`conversation-person ${role === currentUser.role ? 'active' : ''}`}>
+            <strong>{names[role].split(' (')[0]}</strong>
+            <span>{roleLabel[role]}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="chat-messages chat-messages--tall">
         {thread.length === 0 && (
-          <p style={{ textAlign: 'center', color: 'var(--clr-muted)', padding: '24px 0' }}>
-            No messages yet. Start the conversation!
+          <p className="text-muted text-center" style={{ padding: '24px 0' }}>
+            No messages yet. Start the conversation.
           </p>
         )}
-
-        {thread.map((m) => {
-          const isMine = m.from === currentUser.role;
+        {thread.map((message) => {
+          const isMine = message.from === currentUser.role;
           return (
-            <div
-              key={m.id}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: isMine ? 'flex-end' : 'flex-start',
-              }}
-            >
-              {/* Sender label for incoming messages */}
-              {!isMine && (
-                <span className="chat-bubble__sender">{m.fromName}</span>
-              )}
-
-              <div
-                className={`chat-bubble ${
-                  isMine ? 'chat-bubble--mine' : 'chat-bubble--theirs'
-                }`}
-              >
-                {m.text}
+            <div key={message.id} className={`chat-line ${isMine ? 'mine' : ''}`}>
+              {!isMine && <span className="chat-bubble__sender">{message.fromName}</span>}
+              <div className={`chat-bubble ${isMine ? 'chat-bubble--mine' : 'chat-bubble--theirs'}`}>
+                {message.text}
               </div>
-
-              <span className="chat-bubble__time">{m.time}</span>
+              <span className="chat-bubble__time">{message.time}</span>
             </div>
           );
         })}
-
-        {/* Invisible anchor for auto-scroll */}
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input row ── */}
       <div className="chat-input-row">
-        <input
-          className="chat-input"
+        <textarea
+          className="chat-input chat-input--textarea"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`Message ${ROLE_NAMES[recipient].split(' (')[0]}…`}
+          placeholder={`Message ${names[recipient].split(' (')[0]} in detail...`}
         />
-        <button
-          className="btn btn--primary btn--sm"
-          onClick={sendMessage}
-          disabled={!text.trim()}
-        >
-          Send ➤
+        <button className="btn btn--primary btn--sm" onClick={sendMessage} disabled={!text.trim()}>
+          Send
         </button>
       </div>
     </div>

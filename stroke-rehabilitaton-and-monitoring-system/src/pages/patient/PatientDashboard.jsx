@@ -1,215 +1,106 @@
-/**
- * pages/patient/PatientDashboard.jsx
- * ─────────────────────────────────────────────────────────────
- * Home screen for the Patient portal.
- *
- * Fixes applied:
- *   • TODAY is now dynamic (real current date) instead of hardcoded
- *   • markComplete creates a NEW session if one doesn't exist yet
- *   • shared.css imported here to guarantee styles are loaded
- * ─────────────────────────────────────────────────────────────
- */
-
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { StatCard, ProgressBar, Alert, Badge } from '../../components/shared/UI';
-import '../../styles/shared.css';
-
-// Always use the real current date so exercise sessions match
-const TODAY = new Date().toISOString().split('T')[0]; // e.g. "2025-04-20"
+import { Alert, Badge, ProgressBar, StatCard } from '../../components/shared/UI';
+import {
+  getAssignedExercises,
+  getCaregiverForPatient,
+  getDoctorForPatient,
+  getPatient,
+  getPatientIdForUser,
+  getPatientSessions,
+  todayKey,
+} from '../../utils/care';
 
 const PatientDashboard = ({ setPage }) => {
+  const { currentUser } = useAuth();
   const [state, dispatch] = useStore();
-  const { patientProfile: p, exercisePlan, nextSession } = state;
+  const patientId = getPatientIdForUser(currentUser);
+  const patient = getPatient(state, patientId);
+  const caregiver = getCaregiverForPatient(state, patientId);
+  const doctor = getDoctorForPatient(state, patientId);
+  const assigned = getAssignedExercises(state, patientId);
+  const sessions = getPatientSessions(state, patientId);
+  const medications = state.medications[patientId] || [];
+  const nextSession = state.nextSession[patientId];
+  const today = todayKey();
+  const doneToday = sessions.filter((session) => session.date === today && session.completed).length;
+  const dailyCount = assigned.filter((exercise) => exercise.freq === 'Daily').length || assigned.length;
+  const medsTaken = medications.filter((med) => med.takenToday).length;
 
-  // Daily exercises from the plan
-  const dailyExercises = exercisePlan.filter((e) => e.freq === 'Daily');
-
-  // Count how many are done today
-  const doneToday = state.sessions.filter(
-    (s) => s.date === TODAY && s.completed
-  ).length;
-
-  /**
-   * Mark an exercise as completed.
-   * If a session record for today exists → update it.
-   * If not → create a new one so it always works regardless of date.
-   */
-  const markComplete = (exerciseName) => {
-    const exists = state.sessions.find(
-      (s) => s.exercise === exerciseName && s.date === TODAY
-    );
-
+  const markComplete = (exercise) => {
     dispatch((s) => ({
       ...s,
-      sessions: exists
-        ? s.sessions.map((sess) =>
-            sess.exercise === exerciseName && sess.date === TODAY
-              ? { ...sess, completed: true, loggedBy: 'patient' }
-              : sess
-          )
-        : [
-            ...s.sessions,
-            {
-              id: `s${Date.now()}`,
-              date: TODAY,
-              exercise: exerciseName,
-              duration: 20,
-              completed: true,
-              pain: 0,
-              notes: '',
-              loggedBy: 'patient',
-            },
-          ],
+      sessions: [
+        ...s.sessions,
+        {
+          id: `s${Date.now()}`,
+          patientId,
+          date: today,
+          exerciseId: exercise.id,
+          exercise: exercise.name,
+          duration: exercise.duration,
+          completed: true,
+          pain: 0,
+          notes: '',
+          loggedBy: 'patient',
+        },
+      ],
     }));
   };
 
   return (
     <div>
-      {/* ── Welcome banner ── */}
-      <div
-        className="anim-fade-up anim-delay-1"
-        style={{
-          background:
-            'linear-gradient(125deg, var(--clr-primary) 0%, var(--clr-primary-dk) 100%)',
-          borderRadius: 'var(--radius)',
-          padding: '22px 28px',
-          marginBottom: 20,
-          color: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      <section className="care-hero anim-fade-up anim-delay-1">
         <div>
-          <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: 4 }}>
-            Good morning 👋
+          <span className="care-hero__eyebrow">Remote physiotherapy plan</span>
+          <h2>Welcome back, {patient.name.split(' ')[0]}</h2>
+          <p>
+            Your caregiver {caregiver.name} and {doctor.name} are connected to this same care record.
           </p>
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.55rem',
-              marginBottom: 6,
-            }}
-          >
-            Welcome back, {p.name.split(' ')[0]}!
-          </h2>
-          <p style={{ fontSize: '0.88rem', opacity: 0.8 }}>
-            You're on a <strong>{p.streak}-day streak</strong> 🔥 Keep it up!
-          </p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '3.2rem',
-              lineHeight: 1,
-            }}
-          >
-            {p.progress}%
-          </div>
-          <div style={{ fontSize: '0.78rem', opacity: 0.65 }}>
-            Overall recovery
+          <div className="chip-row">
+            <Badge variant="green">{patient.streak}-day streak</Badge>
+            <Badge variant="blue">{assigned.length} assigned exercises</Badge>
+            <Badge variant={medsTaken === medications.length ? 'green' : 'warn'}>
+              {medsTaken}/{medications.length} meds today
+            </Badge>
           </div>
         </div>
+        <div className="recovery-ring">
+          <strong>{patient.progress}%</strong>
+          <span>recovery</span>
+        </div>
+      </section>
+
+      <div className="grid-4 anim-fade-up anim-delay-2" style={{ marginBottom: 20 }}>
+        <StatCard icon="Done" label="Today" value={`${doneToday}/${dailyCount}`} sub="therapy sessions" iconBg="#e6f9f0" />
+        <StatCard icon="Video" label="Video Library" value={state.exerciseLibrary.length} sub="short exercises" iconBg="var(--clr-primary-lt)" />
+        <StatCard icon="Meds" label="Medication" value={`${medsTaken}/${medications.length}`} sub="taken today" iconBg="#fff5e6" />
+        <StatCard icon="Msg" label="Care Team" value="2" sub="doctor + caregiver" iconBg="#e8ecfb" />
       </div>
 
-      {/* ── KPI stat cards ── */}
-      <div
-        className="grid-4 anim-fade-up anim-delay-2"
-        style={{ marginBottom: 20 }}
-      >
-        <StatCard
-          icon="✅"
-          label="Today's Progress"
-          value={`${doneToday}/${dailyExercises.length}`}
-          sub="sessions completed"
-          iconBg="#e6f9f0"
-        />
-        <StatCard
-          icon="📅"
-          label="Total Sessions"
-          value={p.totalSessions}
-          sub={`of ${p.targetSessions} target`}
-          iconBg="var(--clr-primary-lt)"
-        />
-        <StatCard
-          icon="🔥"
-          label="Day Streak"
-          value={p.streak}
-          sub="consecutive days"
-          iconBg="#fff5e6"
-        />
-        <StatCard
-          icon="💪"
-          label="Exercises Assigned"
-          value={exercisePlan.length}
-          sub="in active plan"
-          iconBg="var(--clr-primary-lt)"
-        />
-      </div>
-
-      {/* ── Two-column section ── */}
       <div className="grid-2 anim-fade-up anim-delay-3">
-        {/* Today's exercise checklist */}
         <div className="card">
           <div className="card__header">
-            <span className="card__title">📋 Today's Exercises</span>
-            <button
-              className="btn btn--outline btn--sm"
-              onClick={() => setPage('exercises')}
-            >
-              View All
-            </button>
+            <span className="card__title">Today's assigned exercises</span>
+            <button className="btn btn--outline btn--sm" onClick={() => setPage('exercises')}>Open videos</button>
           </div>
-          <div
-            className="card__body"
-            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-          >
-            {dailyExercises.length === 0 && (
-              <p className="text-muted text-center" style={{ padding: '16px 0' }}>
-                No daily exercises assigned yet.
-              </p>
-            )}
-
-            {dailyExercises.map((ex) => {
-              const session = state.sessions.find(
-                (s) => s.exercise === ex.name && s.date === TODAY
+          <div className="card__body stack-list">
+            {assigned.slice(0, 5).map((exercise) => {
+              const done = sessions.some(
+                (session) => session.date === today && session.exerciseId === exercise.id && session.completed
               );
-              const done = session?.completed || false;
-
               return (
-                <div
-                  key={ex.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: done
-                      ? 'var(--clr-primary-lt)'
-                      : 'var(--clr-bg)',
-                    border: '1px solid var(--clr-border)',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <span style={{ fontSize: '1.4rem' }}>{ex.emoji}</span>
+                <div key={exercise.id} className="care-row">
+                  <div className="care-row__icon">{exercise.icon}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.86rem' }}>
-                      {ex.name}
-                    </div>
-                    <div className="text-muted">{ex.sets}</div>
+                    <strong>{exercise.name}</strong>
+                    <span>{exercise.bodyPart} · {exercise.sets} · {exercise.duration} min</span>
                   </div>
                   {done ? (
-                    <Badge variant="green">✓ Done</Badge>
+                    <Badge variant="green">Done</Badge>
                   ) : (
-                    <button
-                      className="btn btn--primary btn--xs"
-                      onClick={() => markComplete(ex.name)}
-                    >
-                      Start
-                    </button>
+                    <button className="btn btn--primary btn--xs" onClick={() => markComplete(exercise)}>Done</button>
                   )}
                 </div>
               );
@@ -217,76 +108,54 @@ const PatientDashboard = ({ setPage }) => {
           </div>
         </div>
 
-        {/* Right column: progress + streak + next session */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Recovery progress */}
+        <div className="card-stack">
           <div className="card">
             <div className="card__header">
-              <span className="card__title">📈 Recovery Progress</span>
+              <span className="card__title">Recovery progress</span>
+              <Badge variant="blue">Weekly</Badge>
             </div>
             <div className="card__body">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
-              >
+              <div className="flex-between" style={{ marginBottom: 8 }}>
                 <span className="text-muted">Overall recovery</span>
-                <strong style={{ color: 'var(--clr-primary)' }}>
-                  {p.progress}%
-                </strong>
+                <strong>{patient.progress}%</strong>
               </div>
-              <ProgressBar value={p.progress} />
-
-              <div className="divider" />
-
-              {/* Weekly streak dots */}
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: '0.86rem',
-                  marginBottom: 8,
-                }}
-              >
-                This Week
-              </div>
+              <ProgressBar value={patient.progress} />
               <div className="streak-days">
-                {['M', 'T', 'W', 'T', 'F', 'Sa', 'Su'].map((d, i) => (
-                  <div
-                    key={i}
-                    className={`streak-day ${
-                      i < p.streak
-                        ? 'streak-day--done'
-                        : i === p.streak
-                        ? 'streak-day--today'
-                        : 'streak-day--miss'
-                    }`}
-                  >
-                    {d}
+                {['M', 'T', 'W', 'T', 'F', 'Sa', 'Su'].map((day, index) => (
+                  <div key={`${day}-${index}`} className={`streak-day ${index < Math.min(patient.streak, 7) ? 'streak-day--done' : 'streak-day--miss'}`}>
+                    {day}
                   </div>
                 ))}
               </div>
-              <p className="text-muted" style={{ marginTop: 8 }}>
-                {p.streak} of 7 days completed
-              </p>
             </div>
           </div>
 
-          {/* Next session reminder */}
           <div className="card">
             <div className="card__header">
-              <span className="card__title">⏰ Next Session</span>
+              <span className="card__title">Medication tracker</span>
+              <button className="btn btn--outline btn--sm" onClick={() => setPage('medications')}>Manage</button>
             </div>
-            <div className="card__body">
-              <Alert variant="info" icon="🗓️">
-                <strong>{nextSession.date}</strong>
-                <br />
-                {nextSession.exercise}
-              </Alert>
+            <div className="card__body stack-list">
+              {medications.map((med) => (
+                <div className="care-row" key={med.id}>
+                  <div style={{ flex: 1 }}>
+                    <strong>{med.name}</strong>
+                    <span>{med.dose} · {med.schedule}</span>
+                  </div>
+                  <Badge variant={med.takenToday ? 'green' : 'warn'}>
+                    {med.takenToday ? 'Taken' : 'Due'}
+                  </Badge>
+                </div>
+              ))}
             </div>
           </div>
+
+          {nextSession && (
+            <Alert variant="info" icon="Next">
+              <strong>{nextSession.date}</strong><br />
+              {nextSession.exercise}
+            </Alert>
+          )}
         </div>
       </div>
     </div>

@@ -20,6 +20,8 @@ const publicUser = (user) => ({
   avatar: user.avatar,
   color: user.color,
   email: user.email,
+  patientId: user.patientId,
+  doctorId: user.doctorId,
 });
 
 const initialsFromName = (name) =>
