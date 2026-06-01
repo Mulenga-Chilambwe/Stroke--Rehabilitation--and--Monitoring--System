@@ -87,7 +87,7 @@ const PatientExercises = () => {
             Assigned plan
           </button>
           <button className={tab === 'library' ? 'active' : ''} onClick={() => setTab('library')}>
-            120-video library
+            15-video library
           </button>
         </div>
         <select value={filter} onChange={(e) => setFilter(e.target.value)} className="select-control">

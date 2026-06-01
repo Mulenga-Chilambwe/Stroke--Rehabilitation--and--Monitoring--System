@@ -48,7 +48,7 @@ const focusAreas = [
   },
 ];
 
-export const EXERCISE_LIBRARY = Array.from({ length: 120 }, (_, index) => {
+export const EXERCISE_LIBRARY = Array.from({ length: 15 }, (_, index) => {
   const area = focusAreas[index % focusAreas.length];
   const name = area.names[Math.floor(index / focusAreas.length) % area.names.length];
   const level = Math.floor(index / 30) + 1;
@@ -178,17 +178,17 @@ export const INITIAL_DOCTORS = [
 ];
 
 export const INITIAL_ASSIGNMENTS = {
-  p1: ['lib-1', 'lib-2', 'lib-7', 'lib-14', 'lib-20', 'lib-31', 'lib-44'],
-  p2: ['lib-3', 'lib-9', 'lib-15', 'lib-28', 'lib-36', 'lib-55'],
-  p3: ['lib-4', 'lib-10', 'lib-22', 'lib-34', 'lib-46', 'lib-58'],
+  p1: ['lib-1', 'lib-2', 'lib-4', 'lib-7', 'lib-8', 'lib-12'],
+  p2: ['lib-3', 'lib-5', 'lib-9', 'lib-10', 'lib-11'],
+  p3: ['lib-4', 'lib-6', 'lib-10', 'lib-12', 'lib-14'],
 };
 
 export const INITIAL_SESSIONS = [
   { id: 's1', patientId: 'p1', date: daysAgo(5), exerciseId: 'lib-1', exercise: 'Finger taps 1.1', duration: 14, completed: true, pain: 1, notes: 'Better finger separation.', loggedBy: 'patient' },
   { id: 's2', patientId: 'p1', date: daysAgo(4), exerciseId: 'lib-7', exercise: 'Wrist circles 1.2', duration: 12, completed: true, pain: 0, notes: 'No discomfort.', loggedBy: 'patient' },
   { id: 's3', patientId: 'p1', date: daysAgo(3), exerciseId: 'lib-14', exercise: 'Table slides 1.3', duration: 18, completed: true, pain: 2, notes: 'Mild shoulder pulling.', loggedBy: 'caregiver' },
-  { id: 's4', patientId: 'p1', date: daysAgo(2), exerciseId: 'lib-20', exercise: 'Assisted shoulder lift 1.4', duration: 16, completed: true, pain: 2, notes: 'Completed with support.', loggedBy: 'patient' },
-  { id: 's5', patientId: 'p1', date: daysAgo(1), exerciseId: 'lib-31', exercise: 'Finger taps 2.6', duration: 15, completed: false, pain: 0, notes: 'Skipped due to fatigue.', loggedBy: 'caregiver' },
+  { id: 's4', patientId: 'p1', date: daysAgo(2), exerciseId: 'lib-8', exercise: 'Wall crawl 1.8', duration: 16, completed: true, pain: 2, notes: 'Completed with support.', loggedBy: 'patient' },
+  { id: 's5', patientId: 'p1', date: daysAgo(1), exerciseId: 'lib-12', exercise: 'Number sequence 1.2', duration: 15, completed: false, pain: 0, notes: 'Skipped due to fatigue.', loggedBy: 'caregiver' },
   { id: 's6', patientId: 'p2', date: daysAgo(1), exerciseId: 'lib-15', exercise: 'Heel slide 1.3', duration: 10, completed: true, pain: 3, notes: 'Knee stiffness reported.', loggedBy: 'caregiver' },
   { id: 's7', patientId: 'p3', date: daysAgo(1), exerciseId: 'lib-22', exercise: 'Supported stance 1.4', duration: 20, completed: true, pain: 0, notes: 'Strong balance today.', loggedBy: 'patient' },
 ];
@@ -232,7 +232,7 @@ export const INITIAL_ALERTS = [
 ];
 
 export const INITIAL_NEXT_SESSION = {
-  p1: { date: 'Today, 3:00 PM', exerciseId: 'lib-20', exercise: 'Assisted shoulder lift 1.4', reminder: true },
+  p1: { date: 'Today, 3:00 PM', exerciseId: 'lib-8', exercise: 'Wall crawl 1.8', reminder: true },
   p2: { date: 'Today, 4:30 PM', exerciseId: 'lib-15', exercise: 'Heel slide 1.3', reminder: true },
   p3: { date: 'Tomorrow, 9:00 AM', exerciseId: 'lib-22', exercise: 'Supported stance 1.4', reminder: true },
 };
