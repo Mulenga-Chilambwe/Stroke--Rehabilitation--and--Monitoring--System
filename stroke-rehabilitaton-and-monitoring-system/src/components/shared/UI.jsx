@@ -64,7 +64,7 @@ export const Sidebar = ({ user, page, setPage, navSections, onLogout }) => {
                 onKeyDown={(e) => e.key === 'Enter' && setPage(item.id)}
               >
                 <span className="sidebar__item-icon">{item.icon}</span>
-                <span style={{ flex: 1 }}>{item.label}</span>
+                <span className="sidebar__item-label">{item.label}</span>
                 {item.badge > 0 && (
                   <span className="sidebar__item-badge">{item.badge}</span>
                 )}
@@ -129,22 +129,13 @@ export const Topbar = ({ title, user, unreadCount = 0, onBellClick }) => {
         </div>
 
         {/* Date chip */}
-        <span
-          style={{
-            fontSize: '0.75rem',
-            background: 'var(--clr-primary-lt)',
-            color: 'var(--clr-primary)',
-            padding: '5px 12px',
-            borderRadius: 'var(--radius-pill)',
-            fontWeight: 500,
-          }}
-        >
-          📅 {today}
+        <span className="date-chip">
+          Date: {today}
         </span>
 
         {/* Notification bell */}
         <button className="notif-btn" onClick={onBellClick} title="Messages">
-          🔔
+          Msg
           {unreadCount > 0 && <span className="notif-btn__dot" />}
         </button>
 
