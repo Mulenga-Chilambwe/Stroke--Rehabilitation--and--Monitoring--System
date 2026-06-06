@@ -71,24 +71,35 @@
 /* Navigation list */
 .sidebar__nav {
   flex: 1;
-  padding: 10px 0;
+  padding: 12px 0;
   overflow-y: auto;
 }
 
+.sidebar__nav > div {
+  margin-bottom: 8px;
+}
+
+.sidebar__nav > div:last-child {
+  margin-bottom: 0;
+}
+
 .sidebar__section-label {
-  padding: 14px 22px 4px;
+  padding: 14px 22px 8px;
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: rgba(255,255,255,.22);
   font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: break-word;
 }
 
 .sidebar__item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 11px;
-  padding: 10px 22px;
+  min-height: 44px;
+  padding: 11px 22px;
   color: rgba(255,255,255,.76);
   font-size: 0.85rem;
   font-weight: 600;
@@ -115,17 +126,20 @@
   flex-shrink: 0;
   width: 20px;
   text-align: center;
+  line-height: 1.35;
 }
 
 .sidebar__item-label {
   flex: 1;
   min-width: 0;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .sidebar__item-badge {
   margin-left: auto;
+  margin-top: 1px;
   background: var(--clr-accent);
   color: #fff;
   border-radius: var(--radius-pill);

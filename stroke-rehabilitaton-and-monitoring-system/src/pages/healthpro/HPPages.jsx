@@ -28,9 +28,25 @@ const PatientSelector = ({ patients, selectedId, onSelect }) => (
   </select>
 );
 
+const NoAssignedPatients = () => (
+  <div className="card anim-fade-up">
+    <div className="card__header">
+      <span className="card__title">No assigned patients yet</span>
+      <Badge variant="muted">0 cases</Badge>
+    </div>
+    <div className="card__body">
+      <p className="text-muted" style={{ lineHeight: 1.7 }}>
+        Patient records will appear here after a patient selects you as their available doctor during registration.
+      </p>
+    </div>
+  </div>
+);
+
 const HPDashboard = () => {
   const { state, patients } = useDoctorState();
   const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+  if (patients.length === 0) return <NoAssignedPatients />;
+
   const selected = getPatient(state, selectedId);
   const caregiver = getCaregiverForPatient(state, selectedId);
   const vitals = state.vitals[selectedId];
@@ -148,6 +164,8 @@ const HPExercisePlan = () => {
     ? state.exerciseLibrary
     : state.exerciseLibrary.filter((exercise) => exercise.category === focus || exercise.bodyPart === focus);
 
+  if (patients.length === 0) return <NoAssignedPatients />;
+
   const assignExercise = (exercise) => {
     if (assignedIds.includes(exercise.id)) return;
     dispatch((s) => ({
@@ -260,6 +278,8 @@ const HPExercisePlan = () => {
 const HPReports = () => {
   const { state, patients } = useDoctorState();
   const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+  if (patients.length === 0) return <NoAssignedPatients />;
+
   const patient = getPatient(state, selectedId);
   const sessions = getPatientSessions(state, selectedId);
   const vitals = state.vitals[selectedId];

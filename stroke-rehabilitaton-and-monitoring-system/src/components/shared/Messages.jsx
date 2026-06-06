@@ -23,10 +23,22 @@ const Messages = ({ currentUser }) => {
   const [recipient, setRecipient] = useState(currentUser.role === 'hp' ? 'patient' : 'hp');
   const [text, setText] = useState('');
   const bottomRef = useRef(null);
+  const hasAccessiblePatient = currentUser.role === 'hp' ? doctorPatients.length > 0 : Boolean(defaultPatientId);
 
-  const patient = getPatient(state, patientId);
-  const caregiver = getCaregiverForPatient(state, patientId);
-  const doctor = getDoctorForPatient(state, patientId);
+  useEffect(() => {
+    if (currentUser.role === 'hp' && doctorPatients.length > 0 && !doctorPatients.some((patient) => patient.id === patientId)) {
+      setPatientId(doctorPatients[0].id);
+    }
+  }, [currentUser.role, doctorPatients, patientId]);
+
+  const activePatientId =
+    currentUser.role === 'hp' && !doctorPatients.some((item) => item.id === patientId)
+      ? doctorPatients[0]?.id || patientId
+      : patientId;
+
+  const patient = getPatient(state, activePatientId);
+  const caregiver = getCaregiverForPatient(state, activePatientId);
+  const doctor = getDoctorForPatient(state, activePatientId);
 
   const names = useMemo(
     () => ({
@@ -40,20 +52,20 @@ const Messages = ({ currentUser }) => {
   const recipientOptions = ['patient', 'caregiver', 'hp'].filter((role) => role !== currentUser.role);
   const thread = state.messages.filter(
     (message) =>
-      message.patientId === patientId &&
+      message.patientId === activePatientId &&
       ((message.from === currentUser.role && message.to === recipient) ||
         (message.from === recipient && message.to === currentUser.role))
   );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [thread.length, recipient, patientId]);
+  }, [thread.length, recipient, activePatientId]);
 
   useEffect(() => {
     dispatch((s) => ({
       ...s,
       messages: s.messages.map((message) =>
-        message.patientId === patientId &&
+        message.patientId === activePatientId &&
         message.from === recipient &&
         message.to === currentUser.role &&
         !message.read
@@ -61,7 +73,7 @@ const Messages = ({ currentUser }) => {
           : message
       ),
     }));
-  }, [patientId, recipient, currentUser.role, dispatch]);
+  }, [activePatientId, recipient, currentUser.role, dispatch]);
 
   const sendMessage = () => {
     const trimmed = text.trim();
@@ -73,7 +85,7 @@ const Messages = ({ currentUser }) => {
         ...s.messages,
         {
           id: `m${Date.now()}`,
-          patientId,
+          patientId: activePatientId,
           from: currentUser.role,
           to: recipient,
           fromName: currentUser.name,
@@ -85,6 +97,21 @@ const Messages = ({ currentUser }) => {
     }));
     setText('');
   };
+
+  if (!hasAccessiblePatient) {
+    return (
+      <div className="card anim-fade-up">
+        <div className="card__header">
+          <span className="card__title">No care thread yet</span>
+        </div>
+        <div className="card__body">
+          <p className="text-muted" style={{ lineHeight: 1.7 }}>
+            Messages become available after this account is connected to a patient care record.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card anim-fade-up" style={{ overflow: 'hidden' }}>

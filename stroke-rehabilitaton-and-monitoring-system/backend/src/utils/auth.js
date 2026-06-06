@@ -22,6 +22,8 @@ const publicUser = (user) => ({
   email: user.email,
   patientId: user.patientId,
   doctorId: user.doctorId,
+  caregiverId: user.caregiverId,
+  isAvailable: user.isAvailable,
 });
 
 const initialsFromName = (name) =>

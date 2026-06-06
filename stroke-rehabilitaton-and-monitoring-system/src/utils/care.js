@@ -1,10 +1,9 @@
 export const getPatientIdForUser = (user) => {
   if (user?.patientId) return user.patientId;
-  if (user?.role === 'patient' || user?.role === 'caregiver') return 'p1';
-  return 'p1';
+  return '';
 };
 
-export const getDoctorIdForUser = (user) => user?.doctorId || 'd1';
+export const getDoctorIdForUser = (user) => user?.doctorId || '';
 
 export const getPatient = (state, patientId = 'p1') =>
   state.patients.find((patient) => patient.id === patientId) || state.patients[0];

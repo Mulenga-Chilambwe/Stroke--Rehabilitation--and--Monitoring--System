@@ -7,6 +7,9 @@ const demoUsers = [
     email: "mercy@patient.zm",
     password: "patient123",
     patientId: "p1",
+    caregiverId: "c1",
+    doctorId: "d1",
+    isAvailable: false,
   },
   {
     role: "caregiver",
@@ -16,6 +19,9 @@ const demoUsers = [
     email: "john@caregiver.zm",
     password: "caregiver123",
     patientId: "p1",
+    caregiverId: "c1",
+    doctorId: "d1",
+    isAvailable: false,
   },
   {
     role: "hp",
@@ -25,6 +31,7 @@ const demoUsers = [
     email: "kumaran@cbu.ac.zm",
     password: "doctor123",
     doctorId: "d1",
+    isAvailable: true,
   },
 ];
 

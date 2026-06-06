@@ -7,17 +7,17 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import { DEMO_USERS } from '../data/mockData';
 
 const AuthContext = createContext(null);
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-const authRequest = async (path, body) => {
+const apiRequest = async (path, { method = 'GET', body } = {}) => {
   const response = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    ...(body ? { body: JSON.stringify(body) } : {}),
   }).catch(() => {
     throw new Error('Cannot reach the backend. Start the Node server and try again.');
   });
@@ -30,6 +30,8 @@ const authRequest = async (path, body) => {
 
   return data;
 };
+
+const authRequest = (path, body) => apiRequest(path, { method: 'POST', body });
 
 /**
  * AuthProvider
@@ -50,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const saveSession = ({ token, user }) => {
-    localStorage.setItem('strokeRehabToken', token);
+    if (token) localStorage.setItem('strokeRehabToken', token);
     localStorage.setItem('strokeRehabUser', JSON.stringify(user));
     setCurrentUser(user);
   };
@@ -86,15 +88,47 @@ export const AuthProvider = ({ children }) => {
     saveSession({ token: 'demo-offline-token', user: publicDemoUser });
   };
 
-  const register = async ({ name, email, password, role }) => {
+  const register = async ({ name, email, password, role, caregiverEmail, doctorId }) => {
     try {
-      const data = await authRequest('/users/register', { name, email, password, role });
+      const data = await authRequest('/users/register', {
+        name,
+        email,
+        password,
+        role,
+        caregiverEmail,
+        doctorId,
+      });
       saveSession(data);
-      return { ok: true };
+      return { ok: true, user: data.user };
     } catch (error) {
       return { ok: false, message: error.message };
     }
   };
+
+  const getAvailableDoctors = useCallback(async () => {
+    try {
+      const data = await apiRequest('/users/doctors/available');
+      return { ok: true, doctors: data.doctors || [] };
+    } catch (error) {
+      return { ok: false, message: error.message, doctors: [] };
+    }
+  }, []);
+
+  const updateDoctorAvailability = useCallback(async (isAvailable) => {
+    try {
+      const data = await authRequest('/users/doctors/availability', {
+        email: currentUser.email,
+        isAvailable,
+      });
+      const updatedUser = { ...currentUser, ...data.user };
+      saveSession({ token: localStorage.getItem('strokeRehabToken'), user: updatedUser });
+      return { ok: true, user: updatedUser };
+    } catch (error) {
+      const updatedUser = { ...currentUser, isAvailable };
+      saveSession({ token: localStorage.getItem('strokeRehabToken'), user: updatedUser });
+      return { ok: false, message: error.message, user: updatedUser };
+    }
+  }, [currentUser]);
 
   /** Clear the current session. */
   const logout = () => {
@@ -104,7 +138,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, loginAsRole, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        getAvailableDoctors,
+        login,
+        loginAsRole,
+        register,
+        updateDoctorAvailability,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

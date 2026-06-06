@@ -31,7 +31,7 @@ const CaregiverPortal = () => {
   const { currentUser, logout } = useAuth();
   const [state] = useStore();
   const [page, setPage] = useState('dashboard');
-  const patientId = currentUser.patientId || 'p1';
+  const patientId = currentUser.patientId || '';
 
   const unreadCount = state.messages.filter(
     (message) => message.patientId === patientId && message.to === 'caregiver' && !message.read
@@ -45,6 +45,21 @@ const CaregiverPortal = () => {
   }));
 
   const renderPage = () => {
+    if (!patientId) {
+      return (
+        <div className="card anim-fade-up">
+          <div className="card__header">
+            <span className="card__title">No patient assigned yet</span>
+          </div>
+          <div className="card__body">
+            <p className="text-muted" style={{ lineHeight: 1.7 }}>
+              Your caregiver account is active, but patient information will only appear after a patient registers with your caregiver email and the system assigns you to that care record.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (page) {
       case 'dashboard': return <CaregiverDashboard setPage={setPage} />;
       case 'vitals': return <CaregiverVitals />;

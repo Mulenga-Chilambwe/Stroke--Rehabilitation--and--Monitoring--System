@@ -15,6 +15,8 @@ const seedDemoUsers = async () => {
         exists.color = user.color;
         exists.patientId = user.patientId || "";
         exists.doctorId = user.doctorId || "";
+        exists.caregiverId = user.caregiverId || "";
+        exists.isAvailable = user.isAvailable ?? exists.isAvailable;
         exists.password = await bcrypt.hash(user.password, 10);
         return exists.save();
       }
@@ -22,6 +24,8 @@ const seedDemoUsers = async () => {
       return User.create({
         ...user,
         email,
+        caregiverId: user.caregiverId || "",
+        isAvailable: user.isAvailable ?? user.role === "hp",
         password: await bcrypt.hash(user.password, 10),
       });
     })

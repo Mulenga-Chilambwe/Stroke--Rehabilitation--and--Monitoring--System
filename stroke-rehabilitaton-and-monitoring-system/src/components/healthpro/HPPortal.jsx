@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { PageWrapper } from '../shared/UI';
+import { Alert, PageWrapper } from '../shared/UI';
 import { HPDashboard, HPExercisePlan, HPReports } from '../../pages/healthpro/HPPages';
 import Messages from '../shared/Messages';
 import '../../styles/healthpro.css';
@@ -29,10 +29,26 @@ const PAGE_TITLES = {
 };
 
 const HPPortal = () => {
-  const { currentUser, logout } = useAuth();
-  const [state] = useStore();
+  const { currentUser, logout, updateDoctorAvailability } = useAuth();
+  const [state, dispatch] = useStore();
   const [page, setPage] = useState('dashboard');
   const unreadCount = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
+  const isAvailable = currentUser.isAvailable !== false;
+
+  const toggleAvailability = async () => {
+    const nextAvailability = !isAvailable;
+    const result = await updateDoctorAvailability(nextAvailability);
+    const updatedUser = result.user || { ...currentUser, isAvailable: nextAvailability };
+
+    dispatch((s) => ({
+      ...s,
+      doctors: s.doctors.map((doctor) =>
+        doctor.id === updatedUser.doctorId
+          ? { ...doctor, isAvailable: nextAvailability }
+          : doctor
+      ),
+    }));
+  };
 
   const navWithBadge = NAV_SECTIONS.map((section) => ({
     ...section,
@@ -61,6 +77,18 @@ const HPPortal = () => {
       unreadCount={unreadCount}
       onLogout={logout}
     >
+      <div className="doctor-toolbar anim-fade-up" style={{ marginBottom: 18 }}>
+        <Alert variant={isAvailable ? 'success' : 'warn'} icon="Status" style={{ margin: 0, flex: 1 }}>
+          Your registration availability is <strong>{isAvailable ? 'on' : 'off'}</strong>.
+        </Alert>
+        <button
+          type="button"
+          className={`btn ${isAvailable ? 'btn--outline' : 'btn--primary'} btn--sm`}
+          onClick={toggleAvailability}
+        >
+          {isAvailable ? 'Turn Off Availability' : 'Turn On Availability'}
+        </button>
+      </div>
       {renderPage()}
     </PageWrapper>
   );

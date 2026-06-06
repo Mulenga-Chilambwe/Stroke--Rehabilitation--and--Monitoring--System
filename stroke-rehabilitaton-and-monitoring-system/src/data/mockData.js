@@ -85,6 +85,9 @@ export const DEMO_USERS = {
     email: 'mercy@patient.zm',
     password: 'patient123',
     patientId: 'p1',
+    caregiverId: 'c1',
+    doctorId: 'd1',
+    isAvailable: false,
   },
   caregiver: {
     id: 'u2',
@@ -95,6 +98,9 @@ export const DEMO_USERS = {
     email: 'john@caregiver.zm',
     password: 'caregiver123',
     patientId: 'p1',
+    caregiverId: 'c1',
+    doctorId: 'd1',
+    isAvailable: false,
   },
   hp: {
     id: 'u3',
@@ -105,6 +111,7 @@ export const DEMO_USERS = {
     email: 'kumaran@cbu.ac.zm',
     password: 'doctor123',
     doctorId: 'd1',
+    isAvailable: true,
   },
 };
 
@@ -174,6 +181,8 @@ export const INITIAL_DOCTORS = [
     name: 'Dr. Santhi Kumaran',
     title: 'Rehabilitation Specialist',
     institution: 'Copperbelt University',
+    email: 'kumaran@cbu.ac.zm',
+    isAvailable: true,
   },
 ];
 

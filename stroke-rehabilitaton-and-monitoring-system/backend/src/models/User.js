@@ -39,6 +39,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    caregiverId: {
+      type: String,
+      default: "",
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

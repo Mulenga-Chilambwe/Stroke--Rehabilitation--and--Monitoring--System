@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useStore } from '../context/StoreContext';
 
 const LOGIN_BACKGROUNDS = [
   'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1800&q=88',
@@ -43,14 +44,38 @@ const FIELD_STYLE = {
   fontSize: '0.92rem',
 };
 
+const createPatientProfile = ({ user, caregiver, doctor }) => ({
+  id: user.patientId,
+  name: user.name,
+  avatar: user.avatar,
+  age: 0,
+  condition: 'Stroke Rehabilitation',
+  admitDate: 'New patient',
+  rehabStart: 'Today',
+  progress: 0,
+  streak: 0,
+  totalSessions: 0,
+  targetSessions: 30,
+  risk: 'moderate',
+  focus: ['Hand and wrist', 'Balance'],
+  caregiverId: user.caregiverId,
+  doctorId: user.doctorId,
+  caregiverEmail: caregiver?.email || '',
+  doctorName: doctor?.name || 'Selected doctor',
+});
+
 const Login = () => {
-  const { login, register } = useAuth();
+  const { getAvailableDoctors, login, register } = useAuth();
+  const [state, dispatch] = useStore();
 
   const [mode, setMode] = useState('login');
   const [bgIndex, setBgIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableDoctors, setAvailableDoctors] = useState(() =>
+    state.doctors.filter((doctor) => doctor.isAvailable !== false)
+  );
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({
     name: '',
@@ -58,6 +83,8 @@ const Login = () => {
     password: '',
     confirmPassword: '',
     role: 'patient',
+    caregiverEmail: '',
+    doctorId: '',
   });
 
   useEffect(() => {
@@ -67,6 +94,36 @@ const Login = () => {
 
     return () => clearInterval(rotation);
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadDoctors = async () => {
+      const result = await getAvailableDoctors();
+      if (ignore) return;
+
+      if (result.ok && result.doctors.length > 0) {
+        setAvailableDoctors(result.doctors);
+        setRegisterForm((current) => ({
+          ...current,
+          doctorId: current.doctorId || result.doctors[0].id,
+        }));
+        return;
+      }
+
+      const localDoctors = state.doctors.filter((doctor) => doctor.isAvailable !== false);
+      setAvailableDoctors(localDoctors);
+      setRegisterForm((current) => ({
+        ...current,
+        doctorId: current.doctorId || localDoctors[0]?.id || '',
+      }));
+    };
+
+    loadDoctors();
+    return () => {
+      ignore = true;
+    };
+  }, [getAvailableDoctors, state.doctors]);
 
   const selectRole = (role) => {
     setMode('login');
@@ -96,6 +153,18 @@ const Login = () => {
       return;
     }
 
+    if (registerForm.role === 'patient') {
+      if (!registerForm.caregiverEmail.trim()) {
+        setError('Please enter the registered caregiver email.');
+        return;
+      }
+
+      if (!registerForm.doctorId) {
+        setError('Please select one available doctor.');
+        return;
+      }
+    }
+
     if (registerForm.password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
@@ -112,10 +181,89 @@ const Login = () => {
       email,
       password: registerForm.password,
       role: registerForm.role,
+      caregiverEmail: registerForm.caregiverEmail.trim().toLowerCase(),
+      doctorId: registerForm.doctorId,
     });
     setIsSubmitting(false);
 
-    if (!result.ok) setError(result.message);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    const createdUser = result.user;
+    dispatch((s) => {
+      if (createdUser.role === 'hp') {
+        const doctorExists = s.doctors.some((doctor) => doctor.id === createdUser.doctorId);
+        return {
+          ...s,
+          doctors: doctorExists
+            ? s.doctors
+            : [
+                ...s.doctors,
+                {
+                  id: createdUser.doctorId,
+                  name: createdUser.name,
+                  title: 'Rehabilitation Specialist',
+                  institution: 'StrokeRehab Portal',
+                  email: createdUser.email,
+                  isAvailable: createdUser.isAvailable,
+                },
+              ],
+        };
+      }
+
+      if (createdUser.role !== 'patient') return s;
+
+      const caregiverEmail = registerForm.caregiverEmail.trim().toLowerCase();
+      const caregiver = {
+        id: createdUser.caregiverId,
+        name: caregiverEmail.split('@')[0],
+        relation: 'Caregiver',
+        phone: '',
+        email: caregiverEmail,
+        patientId: createdUser.patientId,
+        doctorId: createdUser.doctorId,
+      };
+      const doctor = s.doctors.find((item) => item.id === createdUser.doctorId);
+      const patient = createPatientProfile({ user: createdUser, caregiver, doctor });
+
+      return {
+        ...s,
+        patients: s.patients.some((item) => item.id === createdUser.patientId)
+          ? s.patients
+          : [...s.patients, patient],
+        caregivers: s.caregivers.some((item) => item.id === caregiver.id)
+          ? s.caregivers.map((item) => (item.id === caregiver.id ? { ...item, ...caregiver } : item))
+          : [...s.caregivers, caregiver],
+        assignments: {
+          ...s.assignments,
+          [createdUser.patientId]: s.assignments[createdUser.patientId] || [],
+        },
+        vitals: {
+          ...s.vitals,
+          [createdUser.patientId]: s.vitals[createdUser.patientId] || {
+            heartRate: 0,
+            bp: '-',
+            temp: 0,
+            oxygenSat: 0,
+            weight: 0,
+            mood: 'New',
+            sleep: 0,
+            lastUpdated: 'Not logged yet',
+            loggedBy: 'No caregiver entry yet',
+          },
+        },
+        medications: {
+          ...s.medications,
+          [createdUser.patientId]: s.medications[createdUser.patientId] || [],
+        },
+        nextSession: {
+          ...s.nextSession,
+          [createdUser.patientId]: s.nextSession[createdUser.patientId] || null,
+        },
+      };
+    });
   };
 
   const updateLogin = (field, value) => {
@@ -127,6 +275,9 @@ const Login = () => {
     setRegisterForm((current) => ({ ...current, [field]: value }));
     setError('');
   };
+
+  const patientRegistering = registerForm.role === 'patient';
+  const filteredDoctors = availableDoctors.filter((doctor) => doctor.isAvailable !== false);
 
   return (
     <main className="auth-page">
@@ -690,7 +841,13 @@ const Login = () => {
                     <select
                       id="register-role"
                       value={registerForm.role}
-                      onChange={(e) => updateRegister('role', e.target.value)}
+                      onChange={(e) =>
+                        setRegisterForm((current) => ({
+                          ...current,
+                          role: e.target.value,
+                          doctorId: e.target.value === 'patient' ? current.doctorId || filteredDoctors[0]?.id || '' : current.doctorId,
+                        }))
+                      }
                       style={FIELD_STYLE}
                     >
                       <option value="patient">Patient</option>
@@ -698,6 +855,41 @@ const Login = () => {
                       <option value="hp">Health Professional</option>
                     </select>
                   </div>
+                  {patientRegistering && (
+                    <>
+                      <div className="field">
+                        <label htmlFor="register-caregiver-email">Caregiver Email</label>
+                        <input
+                          id="register-caregiver-email"
+                          type="email"
+                          value={registerForm.caregiverEmail}
+                          onChange={(e) => updateRegister('caregiverEmail', e.target.value)}
+                          placeholder="registered caregiver@email.com"
+                          style={FIELD_STYLE}
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="register-doctor">Available Doctor</label>
+                        <select
+                          id="register-doctor"
+                          value={registerForm.doctorId}
+                          onChange={(e) => updateRegister('doctorId', e.target.value)}
+                          style={FIELD_STYLE}
+                          disabled={filteredDoctors.length === 0}
+                        >
+                          {filteredDoctors.length === 0 ? (
+                            <option value="">No doctors available</option>
+                          ) : (
+                            filteredDoctors.map((doctor) => (
+                              <option key={doctor.id} value={doctor.id}>
+                                {doctor.name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div className="field-grid">
                     <div className="field">
                       <label htmlFor="register-password">Password</label>
