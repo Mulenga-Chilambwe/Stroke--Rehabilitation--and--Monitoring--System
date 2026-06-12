@@ -11,13 +11,13 @@ const NAV_SECTIONS = [
   {
     section: 'Patient Care',
     items: [
-      { id: 'dashboard', icon: 'Home', label: 'Wellbeing Overview' },
-      { id: 'vitals', icon: 'Vitals', label: 'Log Vitals' },
+      { id: 'dashboard', icon: 'Home', label: '' },
+      { id: 'vitals', icon: 'Vitals', label: '' },
     ],
   },
   {
     section: 'Communication',
-    items: [{ id: 'messages', icon: 'Chat', label: 'Messages' }],
+    items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
 ];
 

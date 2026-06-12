@@ -10,9 +10,9 @@ const NAV_SECTIONS = [
   {
     section: 'Clinical',
     items: [
-      { id: 'dashboard', icon: 'Dash', label: 'Dashboard' },
-      { id: 'plan', icon: 'Plan', label: 'Assign Exercises' },
-      { id: 'reports', icon: 'Report', label: 'Patient Reports' },
+      { id: 'dashboard', icon: 'Dashb', label: '' },
+      { id: 'plan', icon: 'Plan', label: '' },
+      { id: 'reports', icon: 'Report', label: '' },
     ],
   },
   {

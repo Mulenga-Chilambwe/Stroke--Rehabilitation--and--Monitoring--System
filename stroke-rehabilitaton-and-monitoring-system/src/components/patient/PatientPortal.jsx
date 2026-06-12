@@ -15,7 +15,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'dashboard', icon: 'Home', label: '' },
       { id: 'exercises', icon: 'Video', label: '' },
-      { id: 'progress', icon: 'Chart', label: '' },
+      { id: 'progress', icon: 'progress', label: '' },
       { id: 'medications', icon: 'Medication', label: '' },
     ],
   },
