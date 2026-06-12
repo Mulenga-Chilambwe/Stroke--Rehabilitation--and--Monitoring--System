@@ -13,15 +13,15 @@ const NAV_SECTIONS = [
   {
     section: 'My Care',
     items: [
-      { id: 'dashboard', icon: 'Home', label: 'Dashboard' },
-      { id: 'exercises', icon: 'Video', label: 'Exercise Videos' },
-      { id: 'progress', icon: 'Chart', label: 'Progress' },
-      { id: 'medications', icon: 'Meds', label: 'Medication' },
+      { id: 'dashboard', icon: 'Home', label: '' },
+      { id: 'exercises', icon: 'Video', label: '' },
+      { id: 'progress', icon: 'Chart', label: '' },
+      { id: 'medications', icon: 'Medication', label: '' },
     ],
   },
   {
     section: 'Communication',
-    items: [{ id: 'messages', icon: 'Chat', label: 'Messages' }],
+    items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
 ];
 
