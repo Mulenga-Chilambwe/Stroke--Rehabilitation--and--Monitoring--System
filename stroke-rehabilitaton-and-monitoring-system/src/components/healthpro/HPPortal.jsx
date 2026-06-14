@@ -10,14 +10,14 @@ const NAV_SECTIONS = [
   {
     section: 'Clinical',
     items: [
-      { id: 'dashboard', icon: 'Dashb', label: '' },
+      { id: 'dashboard', icon: 'Dashboard', label: '' },
       { id: 'plan', icon: 'Plan', label: '' },
       { id: 'reports', icon: 'Report', label: '' },
     ],
   },
   {
     section: 'Communication',
-    items: [{ id: 'messages', icon: 'Chat', label: 'Messages' }],
+    items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
 ];
 
