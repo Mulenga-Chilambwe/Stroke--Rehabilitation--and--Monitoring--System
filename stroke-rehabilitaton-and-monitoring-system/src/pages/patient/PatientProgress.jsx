@@ -1,7 +1,16 @@
+/**
+ * pages/patient/PatientProgress.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Patient progress tracking page — displays recovery stats,
+ * session history with pain reports, latest wellbeing vitals,
+ * medication adherence, and a 7-day activity chart.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { Badge, ProgressBar, StatCard } from '../../components/shared/UI';
+import { Badge, ProgressBar, StatCard, RecoverySummary } from '../../components/shared/UI';
 import { getPatient, getPatientIdForUser, getPatientSessions } from '../../utils/care';
 
 const PatientProgress = () => {
@@ -23,6 +32,8 @@ const PatientProgress = () => {
         <StatCard icon="Streak" label="Streak" value={patient.streak} sub="days active" />
         <StatCard icon="Meds" label="Medicine" value={`${medication.filter((m) => m.takenToday).length}/${medication.length}`} sub="taken today" />
       </div>
+
+      <RecoverySummary sessions={sessions} progress={patient.progress} streak={patient.streak} />
 
       <div className="grid-2 anim-fade-up anim-delay-2">
         <div className="card">

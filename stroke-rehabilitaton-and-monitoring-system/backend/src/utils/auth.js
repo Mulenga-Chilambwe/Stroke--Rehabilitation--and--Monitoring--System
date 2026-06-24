@@ -1,3 +1,4 @@
+// Auth utilities — JWT token creation, sanitised user object, avatar helpers
 const jwt = require("jsonwebtoken");
 
 const createToken = (user) => {

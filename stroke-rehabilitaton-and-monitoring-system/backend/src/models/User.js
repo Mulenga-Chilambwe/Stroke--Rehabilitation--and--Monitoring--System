@@ -1,3 +1,4 @@
+// Mongoose User model — stores login credentials, role, and linked IDs for patients/caregivers/health pros
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(

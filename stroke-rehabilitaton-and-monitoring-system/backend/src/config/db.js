@@ -1,3 +1,4 @@
+// Database connection — connects to MongoDB using MONGO_URI from environment variables
 const mongoose = require("mongoose");
 
 const connectDB = async () => {

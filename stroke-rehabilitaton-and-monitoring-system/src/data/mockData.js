@@ -1,3 +1,4 @@
+// Mock data — offline demo data for patients, caregivers, doctors, exercises, sessions, etc.
 const daysAgo = (n) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -206,7 +207,7 @@ export const INITIAL_MESSAGES = [
   { id: 'm1', patientId: 'p1', from: 'hp', to: 'patient', fromName: 'Dr. Kumaran', text: 'Mercy, your hand control is improving. Keep today gentle and controlled.', time: '2h ago', read: false },
   { id: 'm2', patientId: 'p1', from: 'caregiver', to: 'hp', fromName: 'John Banda', text: 'Mercy had mild shoulder pain after assisted lifts. Should I reduce the reps?', time: '1h ago', read: false },
   { id: 'm3', patientId: 'p1', from: 'hp', to: 'caregiver', fromName: 'Dr. Kumaran', text: 'Yes, reduce to one set today and log pain after the session.', time: '45m ago', read: true },
-  { id: 'm4', patientId: 'p2', from: 'hp', to: 'caregiver', fromName: 'Dr. Kumaran', text: 'Please capture Grace’s blood pressure before the afternoon session.', time: '3h ago', read: false },
+  { id: 'm4', patientId: 'p2', from: 'hp', to: 'caregiver', fromName: 'Dr. Kumaran', text: 'Please capture Grace\u2019s blood pressure before the afternoon session.', time: '3h ago', read: false },
 ];
 
 export const INITIAL_VITALS = {
@@ -238,6 +239,79 @@ export const INITIAL_ALERTS = [
   { id: 'a1', patientId: 'p1', type: 'warning', msg: 'Mercy missed a hand-control session yesterday. Caregiver notified.', time: '1d ago', read: false },
   { id: 'a2', patientId: 'p1', type: 'info', msg: 'Weekly progress report is ready for clinical review.', time: '2d ago', read: false },
   { id: 'a3', patientId: 'p2', type: 'warning', msg: 'Grace reported pain 3/5 during lower limb work.', time: '1d ago', read: false },
+];
+
+export const INITIAL_RECORDINGS = [
+  {
+    id: 'rec-1',
+    doctorId: 'd1',
+    patientId: 'p1',
+    exerciseId: 'lib-1',
+    title: 'Personalised Finger Tap Guide',
+    description: 'A close-up demonstration of proper finger tap form with pacing cues tailored to Mercy\'s current recovery stage.',
+    notes: 'Focus on full separation between each finger. Rest 30s between sets. Slow and controlled.',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    fileName: 'finger-tap-demo.mp4',
+    uploadedAt: daysAgo(2),
+    duration: 4,
+    views: 3,
+  },
+  {
+    id: 'rec-2',
+    doctorId: 'd1',
+    patientId: 'p1',
+    exerciseId: null,
+    title: 'Upper Limb Strengthening Routine',
+    description: 'A full guided routine combining wrist circles, towel grip, and supported reaches.',
+    notes: 'Try to complete the full circuit once. Stop if you feel any shoulder strain.',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    fileName: 'upper-limb-routine.mp4',
+    uploadedAt: daysAgo(5),
+    duration: 12,
+    views: 7,
+  },
+  {
+    id: 'rec-3',
+    doctorId: 'd1',
+    patientId: 'p2',
+    exerciseId: 'lib-3',
+    title: 'Heel Slide Technique Demonstration',
+    description: 'Guided heel slide for post-stroke lower limb recovery with positioning tips.',
+    notes: 'Use a towel under the heel if the bed surface is too sticky. Keep the knee aligned.',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    fileName: 'heel-slide-guide.mp4',
+    uploadedAt: daysAgo(1),
+    duration: 6,
+    views: 1,
+  },
+  {
+    id: 'rec-4',
+    doctorId: 'd1',
+    patientId: 'p3',
+    exerciseId: 'lib-22',
+    title: 'Balance Drills for Home Practice',
+    description: 'Three supported balance exercises progressing from weight shift to single-leg stance.',
+    notes: 'Keep a sturdy chair nearby. Only attempt single-leg if weight shift feels comfortable.',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    fileName: 'balance-drills.mp4',
+    uploadedAt: daysAgo(3),
+    duration: 8,
+    views: 2,
+  },
+  {
+    id: 'rec-5',
+    doctorId: 'd1',
+    patientId: 'p1',
+    exerciseId: 'lib-7',
+    title: 'Wrist Mobility Check-in',
+    description: 'Dr. Kumaran checks in with a guided wrist circle and thumb opposition session, with modifications based on Mercy\'s last pain report.',
+    notes: 'If wrist feels stiff, start with smaller circles and gradually increase range.',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    fileName: 'wrist-mobility.mp4',
+    uploadedAt: daysAgo(0),
+    duration: 5,
+    views: 0,
+  },
 ];
 
 export const INITIAL_NEXT_SESSION = {

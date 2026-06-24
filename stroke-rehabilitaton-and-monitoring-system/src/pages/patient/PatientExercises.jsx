@@ -1,3 +1,13 @@
+/**
+ * pages/patient/PatientExercises.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Exercise video library and assigned plan viewer.
+ * Patients can browse exercises by category, watch embedded
+ * YouTube videos, log pain levels and notes, and mark sessions
+ * as complete.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
@@ -11,7 +21,7 @@ import {
 
 const PatientExercises = () => {
   const { currentUser } = useAuth();
-  const [state, dispatch] = useStore();
+  const [state, dispatch, ctx] = useStore();
   const patientId = getPatientIdForUser(currentUser);
   const assigned = getAssignedExercises(state, patientId);
 
@@ -35,6 +45,17 @@ const PatientExercises = () => {
     if (!selected) return;
     const today = todayKey();
 
+    const sessionRecord = {
+      patientId,
+      exerciseId: selected.id,
+      exercise: selected.name,
+      duration: selected.duration,
+      completed: true,
+      pain,
+      notes,
+      loggedBy: 'patient',
+    };
+
     dispatch((s) => {
       const existing = s.sessions.find(
         (session) =>
@@ -42,17 +63,6 @@ const PatientExercises = () => {
           session.exerciseId === selected.id &&
           session.date === today
       );
-
-      const sessionRecord = {
-        patientId,
-        exerciseId: selected.id,
-        exercise: selected.name,
-        duration: selected.duration,
-        completed: true,
-        pain,
-        notes,
-        loggedBy: 'patient',
-      };
 
       return {
         ...s,
@@ -63,6 +73,8 @@ const PatientExercises = () => {
           : [...s.sessions, { id: `s${Date.now()}`, date: today, ...sessionRecord }],
       };
     });
+
+    ctx.syncSession({ ...sessionRecord, date: today, id: `s${Date.now()}` });
 
     setSelected(null);
     setPain(0);

@@ -1,3 +1,4 @@
+// Seed demo users — upserts patient/caregiver/hp accounts with hashed passwords
 const bcrypt = require("bcryptjs");
 const demoUsers = require("./data/demoUsers");
 const User = require("./models/User");

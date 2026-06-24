@@ -1,3 +1,12 @@
+/**
+ * src/index.css
+ * ─────────────────────────────────────────────────────────────
+ * Create React App base stylesheet — minimal body reset,
+ * default system font stack, and monospace code font.
+ * The majority of app styles live in styles/globals.css.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

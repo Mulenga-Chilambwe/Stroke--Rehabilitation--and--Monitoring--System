@@ -1,8 +1,17 @@
+/**
+ * components/healthpro/HPPortal.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Health Professional portal shell — renders PageWrapper,
+ * sidebar navigation, availability toggle, and swaps between
+ * dashboard, exercise plan, reports, recordings, and messages.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { Alert, PageWrapper } from '../shared/UI';
-import { HPDashboard, HPExercisePlan, HPReports } from '../../pages/healthpro/HPPages';
+import { HPDashboard, HPExercisePlan, HPReports, HPRecordings } from '../../pages/healthpro/HPPages';
 import Messages from '../shared/Messages';
 import '../../styles/healthpro.css';
 
@@ -16,6 +25,10 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    section: 'Therapy Media',
+    items: [{ id: 'recordings', icon: 'Recording', label: '' }],
+  },
+  {
     section: 'Communication',
     items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
@@ -25,6 +38,7 @@ const PAGE_TITLES = {
   dashboard: 'Clinical Dashboard',
   plan: 'Exercise Assignment',
   reports: 'Weekly Patient Activity',
+  recordings: 'Recorded Therapy Sessions',
   messages: 'Care Team Messages',
 };
 
@@ -62,6 +76,7 @@ const HPPortal = () => {
       case 'dashboard': return <HPDashboard />;
       case 'plan': return <HPExercisePlan />;
       case 'reports': return <HPReports />;
+      case 'recordings': return <HPRecordings />;
       case 'messages': return <Messages currentUser={currentUser} />;
       default: return <HPDashboard />;
     }

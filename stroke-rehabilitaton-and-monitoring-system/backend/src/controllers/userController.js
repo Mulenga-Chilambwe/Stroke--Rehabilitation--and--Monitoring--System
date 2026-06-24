@@ -1,5 +1,7 @@
+// User controller — handles registration, login, doctor availability, and listing available doctors
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const Patient = require("../models/Patient");
 const { colorForRole, createToken, initialsFromName, publicUser } = require("../utils/auth");
 
 const createRecordId = (prefix) => `${prefix}${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -88,6 +90,32 @@ const registerUser = async (req, res) => {
     }
 
     const user = await User.create(userData);
+
+    if (role === "patient") {
+      try {
+        const caregiverUser = await User.findOne({ email: cleanCaregiverEmail, role: "caregiver" });
+        await Patient.create({
+          userId: user._id,
+          patientId: user.patientId,
+          name: cleanName,
+          avatar: user.avatar,
+          age: 0,
+          condition: "Stroke Rehabilitation",
+          admitDate: new Date().toISOString().split('T')[0],
+          rehabStart: new Date().toISOString().split('T')[0],
+          progress: 0,
+          streak: 0,
+          totalSessions: 0,
+          targetSessions: 30,
+          risk: "moderate",
+          focus: [],
+          caregiverId: user.caregiverId,
+          doctorId: user.doctorId,
+        });
+      } catch (err) {
+        console.error("Patient record creation error (non-blocking):", err);
+      }
+    }
 
     return res.status(201).json({
       token: createToken(user),

@@ -1,3 +1,13 @@
+/**
+ * components/shared/Messages.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Shared chat UI used by all three roles (patient, caregiver, hp).
+ * Displays a message thread filtered by patient case and sender/
+ * recipient role. Supports send, read receipts, and inline role
+ * switching for the health professional.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import {
@@ -15,7 +25,7 @@ const roleLabel = {
 };
 
 const Messages = ({ currentUser }) => {
-  const [state, dispatch] = useStore();
+  const [state, dispatch, ctx] = useStore();
   const doctorId = getDoctorIdForUser(currentUser);
   const defaultPatientId = getPatientIdForUser(currentUser);
   const doctorPatients = state.patients.filter((patient) => patient.doctorId === doctorId);
@@ -79,22 +89,22 @@ const Messages = ({ currentUser }) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    const msgRecord = {
+      id: `m${Date.now()}`,
+      patientId: activePatientId,
+      from: currentUser.role,
+      to: recipient,
+      fromName: currentUser.name,
+      text: trimmed,
+      time: 'Just now',
+      read: false,
+    };
+
     dispatch((s) => ({
       ...s,
-      messages: [
-        ...s.messages,
-        {
-          id: `m${Date.now()}`,
-          patientId: activePatientId,
-          from: currentUser.role,
-          to: recipient,
-          fromName: currentUser.name,
-          text: trimmed,
-          time: 'Just now',
-          read: false,
-        },
-      ],
+      messages: [...s.messages, msgRecord],
     }));
+    ctx.syncMessage(msgRecord);
     setText('');
   };
 

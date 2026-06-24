@@ -1,3 +1,4 @@
+// Utility helpers — data lookup, today's date string, colour variants for difficulty/risk levels
 export const getPatientIdForUser = (user) => {
   if (user?.patientId) return user.patientId;
   return '';
@@ -25,6 +26,12 @@ export const getAssignedExercises = (state, patientId = 'p1') => {
 
 export const getPatientSessions = (state, patientId = 'p1') =>
   state.sessions.filter((session) => session.patientId === patientId);
+
+export const getPatientRecordings = (state, patientId) =>
+  state.recordings.filter((rec) => rec.patientId === patientId);
+
+export const getDoctorRecordings = (state, doctorId) =>
+  state.recordings.filter((rec) => rec.doctorId === doctorId);
 
 export const todayKey = () => new Date().toISOString().split('T')[0];
 

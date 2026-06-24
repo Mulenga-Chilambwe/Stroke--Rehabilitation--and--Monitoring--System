@@ -1,3 +1,4 @@
+// User routes — login, register, doctor availability endpoints
 const express = require("express");
 const {
   listAvailableDoctors,

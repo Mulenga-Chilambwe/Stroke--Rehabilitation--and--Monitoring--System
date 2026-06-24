@@ -1,3 +1,12 @@
+/**
+ * pages/patient/PatientMedications.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Medication tracker — patients can add medications, mark them
+ * as taken today, and view adherence counts. Data is shared
+ * with caregiver and doctor portals.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';

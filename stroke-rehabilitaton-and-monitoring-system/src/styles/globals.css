@@ -1,17 +1,14 @@
-/*
- * globals.css
+/**
+ * styles/globals.css
  * ─────────────────────────────────────────────────────────────
- * Base styles, CSS custom properties (design tokens), and
- * shared utility classes for the Stroke Rehab application.
- *
- * Role-specific colour overrides live in each portal's CSS file.
+ * Global CSS variables, reset, animations, layout utilities,
+ * and shared base styles for the entire StrokeRehab Portal.
+ * Components in shared.css build on these primitives.
  * ─────────────────────────────────────────────────────────────
  */
 
-/* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ── Reset ── */
 *,
 *::before,
 *::after {
@@ -20,147 +17,127 @@
   padding: 0;
 }
 
-/* ── Default (Patient) design tokens ── */
 :root {
-  /* Brand colours */
-  --clr-primary:     #1a7f74;
-  --clr-primary-dk:  #115c54;
-  --clr-primary-lt:  #e0f4f0;
+  --clr-primary:     #0d9488;
+  --clr-primary-dk:  #0f766e;
+  --clr-primary-lt:  #ccfbf1;
+  --clr-primary-glow: rgba(13, 148, 136, 0.15);
   --clr-accent:      #f59e42;
-  --clr-accent-lt:   #fdf3e3;
-
-  /* Semantic */
-  --clr-success:  #22a06b;
-  --clr-warn:     #d97706;
-  --clr-danger:   #e05252;
-
-  /* Neutrals */
-  --clr-bg:      #f3f8f7;
-  --clr-card:    #ffffff;
-  --clr-border:  #d0e6e2;
-  --clr-fg:      #1c3a34;
-  --clr-muted:   #6a9c93;
-
-  /* Typography */
-  --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body:    'DM Sans', system-ui, sans-serif;
-
-  /* Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-
-  /* Radii */
-  --radius:    14px;
-  --radius-sm:  8px;
-  --radius-xs:  5px;
+  --clr-accent-lt:   #fef3c7;
+  --clr-success:     #10b981;
+  --clr-warn:        #f59e42;
+  --clr-danger:      #ef4444;
+  --clr-info:        #3b82f6;
+  --clr-bg:          #f8fafc;
+  --clr-card:        #ffffff;
+  --clr-border:      #e2e8f0;
+  --clr-border-lt:   #f1f5f9;
+  --clr-fg:          #0f172a;
+  --clr-fg-dk:       #020617;
+  --clr-muted:       #64748b;
+  --clr-muted-lt:    #94a3b8;
+  --font-body:       'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:       'JetBrains Mono', monospace;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;
+  --space-5: 20px;  --space-6: 24px;  --space-8: 32px;  --space-10: 40px;
+  --radius-sm:  6px;
+  --radius:     12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
   --radius-pill: 999px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 6px rgba(0,0,0,.06);
-  --shadow:    0 2px 14px rgba(0,0,0,.08);
-  --shadow-lg: 0 8px 36px rgba(0,0,0,.13);
-
-  /* Transitions */
-  --transition: 0.2s ease;
-
-  /* Sidebar */
-  --sb-width: 238px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.04);
+  --transition: 0.2s cubic-bezier(.4,0,.2,1);
+  --sb-width: 248px;
 }
 
-/* ── Base ── */
 body {
   font-family: var(--font-body);
-  background:  var(--clr-bg);
-  color:       var(--clr-fg);
-  font-size:   15px;
-  line-height: 1.5;
+  background: var(--clr-bg);
+  color: var(--clr-fg);
+  font-size: 14px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-button {
-  font-family: var(--font-body);
-  cursor: pointer;
-}
+button { font-family: var(--font-body); cursor: pointer; }
+input, select, textarea { font-family: var(--font-body); }
 
-input,
-select,
-textarea {
-  font-family: var(--font-body);
-}
+::selection { background: var(--clr-primary); color: #fff; }
 
-/* ── Animations ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
+  50%      { opacity: .5; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Animation helpers ── */
-.anim-fade-up   { animation: fadeUp  0.32s ease both; }
+.anim-fade-up   { animation: fadeUp  0.35s ease both; }
+.anim-fade-in   { animation: fadeIn  0.25s ease both; }
+.anim-slide-in  { animation: slideIn 0.3s ease both; }
+.anim-scale-in  { animation: scaleIn 0.25s ease both; }
 .anim-delay-1   { animation-delay: 0.06s; }
 .anim-delay-2   { animation-delay: 0.12s; }
 .anim-delay-3   { animation-delay: 0.18s; }
 .anim-delay-4   { animation-delay: 0.24s; }
+.anim-delay-5   { animation-delay: 0.3s; }
 
-/* ── Layout helpers ── */
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-center  { display: flex; align-items: center; justify-content: center; }
+.flex-gap     { display: flex; align-items: center; gap: var(--space-3); }
 
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-6); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); }
 
-.flex-gap {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
+.text-muted  { color: var(--clr-muted); font-size: .82rem; }
+.text-center { text-align: center; }
+.text-sm     { font-size: .78rem; }
+.text-xs     { font-size: .7rem; }
+.text-display { font-family: var(--font-body); font-weight: 700; letter-spacing: -.02em; }
 
-.grid-2 { display: grid; grid-template-columns: 1.4fr 1fr;         gap: var(--space-5); }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr);    gap: var(--space-4); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr);    gap: var(--space-4); }
-
-/* ── Typography helpers ── */
-.text-display { font-family: var(--font-display); }
-.text-muted   { color: var(--clr-muted); font-size: 0.8rem; }
-.text-center  { text-align: center; }
-
-/* ── Spacing helpers ── */
 .mt-2 { margin-top: var(--space-2); }
 .mt-3 { margin-top: var(--space-3); }
 .mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
 .mb-2 { margin-bottom: var(--space-2); }
 .mb-3 { margin-bottom: var(--space-3); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-5 { margin-bottom: var(--space-5); }
 
-/* ── Divider ── */
 .divider {
   height: 1px;
   background: var(--clr-border);
-  margin: var(--space-4) 0;
+  margin: var(--space-5) 0;
 }
 
-/* ── Scrollbar (Webkit) ── */
-::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar       { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-muted-lt); }

@@ -1,3 +1,4 @@
+// Demo user accounts — pre-seeded patient, caregiver, and health-professional for testing
 const demoUsers = [
   {
     role: "patient",

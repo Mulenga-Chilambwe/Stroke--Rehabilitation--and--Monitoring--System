@@ -1,3 +1,13 @@
+/**
+ * pages/caregiver/CaregiverVitals.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Vital-signs logging page for caregivers — form for heart rate,
+ * blood pressure, temperature, oxygen saturation, weight, sleep,
+ * and mood. Saves to local state and syncs to the backend.
+ * Generates alerts when vitals fall outside safe ranges.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
@@ -6,7 +16,7 @@ import { getDoctorForPatient, getPatient, getPatientIdForUser, todayKey } from '
 
 const CaregiverVitals = () => {
   const { currentUser } = useAuth();
-  const [state, dispatch] = useStore();
+  const [state, dispatch, ctx] = useStore();
   const patientId = getPatientIdForUser(currentUser);
   const patient = getPatient(state, patientId);
   const doctor = getDoctorForPatient(state, patientId);
@@ -34,6 +44,8 @@ const CaregiverVitals = () => {
       lastUpdated: 'Just now',
       loggedBy: currentUser.name,
     };
+
+    ctx.syncVital({ ...clean, patientId, date: todayKey() });
 
     dispatch((s) => ({
       ...s,

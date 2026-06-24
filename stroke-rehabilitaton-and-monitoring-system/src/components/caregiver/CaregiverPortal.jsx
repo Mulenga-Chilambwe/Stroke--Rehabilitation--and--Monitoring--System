@@ -1,9 +1,19 @@
+/**
+ * components/caregiver/CaregiverPortal.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Caregiver portal shell — renders PageWrapper, sidebar navigation,
+ * and swaps between dashboard, recordings, vitals, and messages pages.
+ * Shows "No patient assigned" if no patientId is linked.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { PageWrapper } from '../shared/UI';
 import CaregiverDashboard from '../../pages/caregiver/CaregiverDashboard';
 import CaregiverVitals from '../../pages/caregiver/CaregiverVitals';
+import CaregiverRecordings from '../../pages/caregiver/CaregiverRecordings';
 import Messages from '../shared/Messages';
 import '../../styles/caregiver.css';
 
@@ -12,6 +22,7 @@ const NAV_SECTIONS = [
     section: 'Patient Care',
     items: [
       { id: 'dashboard', icon: 'Home', label: '' },
+      { id: 'recordings', icon: 'Recording', label: '' },
       { id: 'vitals', icon: 'Vitals', label: '' },
     ],
   },
@@ -23,6 +34,7 @@ const NAV_SECTIONS = [
 
 const PAGE_TITLES = {
   dashboard: 'Caregiver Wellbeing Dashboard',
+  recordings: 'Doctor\'s Recorded Sessions',
   vitals: 'Log Patient Vitals',
   messages: 'Care Team Messages',
 };
@@ -62,6 +74,7 @@ const CaregiverPortal = () => {
 
     switch (page) {
       case 'dashboard': return <CaregiverDashboard setPage={setPage} />;
+      case 'recordings': return <CaregiverRecordings />;
       case 'vitals': return <CaregiverVitals />;
       case 'messages': return <Messages currentUser={currentUser} />;
       default: return <CaregiverDashboard setPage={setPage} />;

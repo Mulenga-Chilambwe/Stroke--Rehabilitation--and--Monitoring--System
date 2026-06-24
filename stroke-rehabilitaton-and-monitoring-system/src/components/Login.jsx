@@ -1,3 +1,12 @@
+/**
+ * components/Login.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Full-page login / registration screen for all three roles.
+ * Features role-selection cards, demo auto-fill, background
+ * image carousel, and a registration form with doctor selection.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';

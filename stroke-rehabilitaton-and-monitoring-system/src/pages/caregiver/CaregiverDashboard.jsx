@@ -1,7 +1,16 @@
+/**
+ * pages/caregiver/CaregiverDashboard.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Caregiver home page — displays patient wellbeing overview,
+ * therapy support tracking, medication check, vitals summary,
+ * alerts, and progress stats.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { Alert, Badge, ProgressBar, StatCard } from '../../components/shared/UI';
+import { Alert, Badge, ProgressBar, RecoverySummary, StatCard } from '../../components/shared/UI';
 import {
   getAssignedExercises,
   getDoctorForPatient,
@@ -13,7 +22,7 @@ import {
 
 const CaregiverDashboard = ({ setPage }) => {
   const { currentUser } = useAuth();
-  const [state, dispatch] = useStore();
+  const [state, dispatch, ctx] = useStore();
   const patientId = getPatientIdForUser(currentUser);
   const patient = getPatient(state, patientId);
   const doctor = getDoctorForPatient(state, patientId);
@@ -26,24 +35,29 @@ const CaregiverDashboard = ({ setPage }) => {
   const doneToday = sessions.filter((session) => session.date === today && session.completed).length;
 
   const markDone = (exercise) => {
-    dispatch((s) => ({
-      ...s,
-      sessions: [
-        ...s.sessions,
-        {
-          id: `s${Date.now()}`,
-          patientId,
-          date: today,
-          exerciseId: exercise.id,
-          exercise: exercise.name,
-          duration: exercise.duration,
-          completed: true,
-          pain: 0,
-          notes: 'Completed with caregiver support.',
-          loggedBy: 'caregiver',
-        },
-      ],
-    }));
+    const today = todayKey();
+    const sessionRecord = {
+      patientId,
+      exerciseId: exercise.id,
+      exercise: exercise.name,
+      duration: exercise.duration,
+      completed: true,
+      pain: 0,
+      notes: 'Completed with caregiver support.',
+      loggedBy: 'caregiver',
+    };
+    dispatch((s) => {
+      const existing = s.sessions.find(
+        (session) => session.patientId === patientId && session.exerciseId === exercise.id && session.date === today
+      );
+      return {
+        ...s,
+        sessions: existing
+          ? s.sessions.map((session) => session.id === existing.id ? { ...session, ...sessionRecord, date: today } : session)
+          : [...s.sessions, { id: `s${Date.now()}`, date: today, ...sessionRecord }],
+      };
+    });
+    ctx.syncSession({ ...sessionRecord, date: today, id: `s${Date.now()}` });
   };
 
   return (
@@ -73,6 +87,7 @@ const CaregiverDashboard = ({ setPage }) => {
               <strong>{patient.progress}%</strong>
             </div>
             <ProgressBar value={patient.progress} />
+            <RecoverySummary sessions={sessions} progress={patient.progress} streak={patient.streak} />
             <div className="divider" />
             <div className="vitals-grid">
               {[

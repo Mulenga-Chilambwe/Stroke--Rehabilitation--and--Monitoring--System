@@ -1,7 +1,16 @@
+/**
+ * pages/patient/PatientDashboard.jsx
+ * ─────────────────────────────────────────────────────────────
+ * Patient home page — shows recovery progress, today's assigned
+ * exercises with one-click completion, medication tracker,
+ * next scheduled session, and care team summary.
+ * ─────────────────────────────────────────────────────────────
+ */
+
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { Alert, Badge, ProgressBar, StatCard } from '../../components/shared/UI';
+import { Alert, Badge, StatCard, RecoverySummary } from '../../components/shared/UI';
 import {
   getAssignedExercises,
   getCaregiverForPatient,
@@ -14,7 +23,7 @@ import {
 
 const PatientDashboard = ({ setPage }) => {
   const { currentUser } = useAuth();
-  const [state, dispatch] = useStore();
+  const [state, dispatch, ctx] = useStore();
   const patientId = getPatientIdForUser(currentUser);
   const patient = getPatient(state, patientId);
   const caregiver = getCaregiverForPatient(state, patientId);
@@ -29,24 +38,29 @@ const PatientDashboard = ({ setPage }) => {
   const medsTaken = medications.filter((med) => med.takenToday).length;
 
   const markComplete = (exercise) => {
-    dispatch((s) => ({
-      ...s,
-      sessions: [
-        ...s.sessions,
-        {
-          id: `s${Date.now()}`,
-          patientId,
-          date: today,
-          exerciseId: exercise.id,
-          exercise: exercise.name,
-          duration: exercise.duration,
-          completed: true,
-          pain: 0,
-          notes: '',
-          loggedBy: 'patient',
-        },
-      ],
-    }));
+    const today = todayKey();
+    const sessionRecord = {
+      patientId,
+      exerciseId: exercise.id,
+      exercise: exercise.name,
+      duration: exercise.duration,
+      completed: true,
+      pain: 0,
+      notes: '',
+      loggedBy: 'patient',
+    };
+    dispatch((s) => {
+      const existing = s.sessions.find(
+        (session) => session.patientId === patientId && session.exerciseId === exercise.id && session.date === today
+      );
+      return {
+        ...s,
+        sessions: existing
+          ? s.sessions.map((session) => session.id === existing.id ? { ...session, ...sessionRecord, date: today } : session)
+          : [...s.sessions, { id: `s${Date.now()}`, date: today, ...sessionRecord }],
+      };
+    });
+    ctx.syncSession({ ...sessionRecord, date: today, id: `s${Date.now()}` });
   };
 
   return (
@@ -109,26 +123,7 @@ const PatientDashboard = ({ setPage }) => {
         </div>
 
         <div className="card-stack">
-          <div className="card">
-            <div className="card__header">
-              <span className="card__title">Recovery progress</span>
-              <Badge variant="blue">Weekly</Badge>
-            </div>
-            <div className="card__body">
-              <div className="flex-between" style={{ marginBottom: 8 }}>
-                <span className="text-muted">Overall recovery</span>
-                <strong>{patient.progress}%</strong>
-              </div>
-              <ProgressBar value={patient.progress} />
-              <div className="streak-days">
-                {['M', 'T', 'W', 'T', 'F', 'Sa', 'Su'].map((day, index) => (
-                  <div key={`${day}-${index}`} className={`streak-day ${index < Math.min(patient.streak, 7) ? 'streak-day--done' : 'streak-day--miss'}`}>
-                    {day}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <RecoverySummary sessions={sessions} progress={patient.progress} streak={patient.streak} />
 
           <div className="card">
             <div className="card__header">

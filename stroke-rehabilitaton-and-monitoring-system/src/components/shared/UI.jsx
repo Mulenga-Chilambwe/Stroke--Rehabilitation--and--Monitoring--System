@@ -264,6 +264,120 @@ export const Modal = ({ title, onClose, wide, footer, children }) => (
 );
 
 // ══════════════════════════════════════════
+// RECOVERY CHART
+// ══════════════════════════════════════════
+/**
+ * RecoveryChart
+ * Props:
+ *   data       – array of { label, value, color? }
+ *   height     – chart height in px (default 80)
+ *   color      – default bar colour
+ */
+export const RecoveryChart = ({ data = [], height = 80, color }) => {
+  if (!data.length) return null;
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="recovery-chart" style={{ height }}>
+      {data.map((item, i) => {
+        const h = Math.max(4, (item.value / max) * height);
+        return (
+          <div
+            key={item.label || i}
+            className="recovery-bar"
+            style={{
+              height,
+              background: 'transparent',
+              display: 'flex',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div
+              style={{
+                height: `${h}px`,
+                width: '100%',
+                borderRadius: '3px 3px 0 0',
+                background: item.color || color || 'var(--clr-primary)',
+                opacity: 0.85,
+                transition: 'height 0.6s cubic-bezier(.4,0,.2,1)',
+                minWidth: 14,
+              }}
+              title={`${item.label}: ${item.value}`}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'var(--clr-fg)',
+                  color: '#fff',
+                  fontSize: '.6rem',
+                  padding: '2px 5px',
+                  borderRadius: 4,
+                  whiteSpace: 'nowrap',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                {item.label}: {item.value}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
+ * RecoverySummary
+ * A compact card showing recovery stats with small bar chart.
+ */
+export const RecoverySummary = ({ sessions = [], progress = 0, streak = 0 }) => {
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const daySessions = sessions.filter((s) => s.date === dateStr);
+    return {
+      label: d.toLocaleDateString('en', { weekday: 'short' }).slice(0, 2),
+      value: daySessions.filter((s) => s.completed).length,
+      date: dateStr,
+    };
+  });
+
+  return (
+    <div className="card">
+      <div className="card__header">
+        <span className="card__title">Recovery activity</span>
+        <span className="badge badge--green">{streak}-day streak</span>
+      </div>
+      <div className="card__body">
+        <div className="flex-between" style={{ marginBottom: 10 }}>
+          <span className="text-muted">Overall progress</span>
+          <strong style={{ fontSize: '1.1rem', fontWeight: 800 }}>{progress}%</strong>
+        </div>
+        <div className="progress-bar__track" style={{ marginBottom: 14 }}>
+          <div
+            className="progress-bar__fill"
+            style={{ width: `${Math.min(100, progress)}%` }}
+          />
+        </div>
+        <RecoveryChart data={last7} height={60} />
+        <div className="flex-between" style={{ marginTop: 8 }}>
+          {last7.map((d) => (
+            <span key={d.label} style={{ fontSize: '.6rem', color: 'var(--clr-muted-lt)', fontWeight: 600, textAlign: 'center', flex: 1 }}>
+              {d.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════
 // PAGE WRAPPER  (Shell: Sidebar + Topbar + content)
 // ══════════════════════════════════════════
 /**
