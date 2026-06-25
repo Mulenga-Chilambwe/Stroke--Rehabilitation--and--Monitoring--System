@@ -246,6 +246,11 @@
   animation: pulse 2s infinite;
 }
 
+.sync-dot--offline {
+  background: var(--clr-muted-lt);
+  animation: none;
+}
+
 .notif-btn {
   position: relative;
   height: 34px;

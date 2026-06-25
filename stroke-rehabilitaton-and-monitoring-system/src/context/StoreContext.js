@@ -1,14 +1,4 @@
-/**
- * context/StoreContext.js
- * ─────────────────────────────────────────────────────────────
- * Global application state management store.
- * Provides `useStore()` hook that returns [state, dispatch, ctx]
- * where ctx has sync* methods for backend persistence.
- * Falls back to mock data when the backend is unavailable.
- * ─────────────────────────────────────────────────────────────
- */
-
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 import {
   EXERCISE_LIBRARY,
@@ -65,6 +55,7 @@ const buildInitialState = () => ({
   nextSession:      { ...INITIAL_NEXT_SESSION },
   loading:          true,
   syncError:        null,
+  lastSync:         null,
 });
 
 const createStore = () => {
@@ -73,8 +64,11 @@ const createStore = () => {
   return {
     getState: () => state,
     setState: (updater) => {
-      state = { ...state, ...updater(state) };
-      listeners.forEach((fn) => fn(state));
+      const prev = state;
+      state = { ...state, ...updater(state), lastSync: new Date().toISOString() };
+      if (JSON.stringify(prev) !== JSON.stringify(state)) {
+        listeners.forEach((fn) => fn(state));
+      }
     },
     subscribe: (fn) => {
       listeners.push(fn);
@@ -95,6 +89,7 @@ export const StoreContext = createContext(null);
 
 export const StoreProvider = ({ children }) => {
   const [state, setState] = useState(store.getState());
+  const pollingRef = useRef(null);
 
   useEffect(() => {
     const unsubscribe = store.subscribe(setState);
@@ -103,6 +98,10 @@ export const StoreProvider = ({ children }) => {
 
   useEffect(() => {
     loadAllData();
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadAllData = async () => {
@@ -126,6 +125,18 @@ export const StoreProvider = ({ children }) => {
       }
 
       store.setState(() => data);
+
+      const userData = localStorage.getItem('strokeRehabUser');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          const pid = user.patientId;
+          if (pid) {
+            refreshPatientData(pid);
+            pollingRef.current = setInterval(() => refreshPatientData(pid), 15000);
+          }
+        } catch (e) {}
+      }
     } catch (err) {
       console.warn('Backend unavailable, using local data:', err.message);
       store.setState(() => ({ loading: false }));
@@ -152,7 +163,7 @@ export const StoreProvider = ({ children }) => {
         const completed = sessions.filter((s) => s.completed).length;
         updates.sessionCounts = { [patientId]: { completed, total: sessions.length } };
       }
-      if (vitalsArr) {
+      if (vitalsArr && vitalsArr.length > 0) {
         const latest = vitalsArr.reduce((a, b) => new Date(a.date || 0) > new Date(b.date || 0) ? a : b, vitalsArr[0]);
         updates.vitals = { ...store.getState().vitals, [patientId]: latest || {} };
         updates.vitalHistory = vitalsArr;

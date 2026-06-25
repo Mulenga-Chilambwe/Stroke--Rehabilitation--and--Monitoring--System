@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../styles/shared.css';
 
 // ══════════════════════════════════════════
@@ -116,16 +116,40 @@ export const Topbar = ({ title, user, unreadCount = 0, onBellClick }) => {
     month: 'short',
     year: 'numeric',
   });
+  const [syncTime, setSyncTime] = useState('Live');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = localStorage.getItem('strokeRehabToken');
+      if (token && token !== 'demo-offline-token' && navigator.onLine) {
+        setSyncTime(new Date().toLocaleTimeString());
+      } else {
+        setSyncTime('Offline');
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="topbar">
       <h2 className="topbar__title">{title}</h2>
 
       <div className="topbar__right">
-        {/* Live sync indicator */}
         <div className="sync-chip">
-          <span className="sync-dot" />
-          Live Sync
+          <span className={`sync-dot ${isOnline && syncTime !== 'Offline' ? '' : 'sync-dot--offline'}`} />
+          {isOnline && syncTime !== 'Offline' ? `Sync ${syncTime}` : 'Offline'}
         </div>
 
         {/* Date chip */}

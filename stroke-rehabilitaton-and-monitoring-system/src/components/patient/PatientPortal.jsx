@@ -1,12 +1,3 @@
-/**
- * components/patient/PatientPortal.jsx
- * ─────────────────────────────────────────────────────────────
- * Patient portal shell — renders PageWrapper, sidebar navigation,
- * and swaps between dashboard, exercises, recordings, progress,
- * medications, and messages pages.
- * ─────────────────────────────────────────────────────────────
- */
-
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
@@ -16,6 +7,7 @@ import PatientExercises from '../../pages/patient/PatientExercises';
 import PatientProgress from '../../pages/patient/PatientProgress';
 import PatientMedications from '../../pages/patient/PatientMedications';
 import PatientRecordings from '../../pages/patient/PatientRecordings';
+import PatientVitals from '../../pages/patient/PatientVitals';
 import Messages from '../shared/Messages';
 import '../../styles/patient.css';
 
@@ -25,6 +17,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'dashboard', icon: 'Home', label: '' },
       { id: 'exercises', icon: 'Video', label: '' },
+      { id: 'vitals', icon: 'Vitals', label: '' },
       { id: 'recordings', icon: 'Recording', label: '' },
       { id: 'progress', icon: 'Progress', label: '' },
       { id: 'medications', icon: 'Medication', label: '' },
@@ -39,7 +32,8 @@ const NAV_SECTIONS = [
 const PAGE_TITLES = {
   dashboard: 'My Recovery Dashboard',
   exercises: 'Remote Physiotherapy Videos',
-  recordings: 'Doctor\'s Recorded Sessions',
+  vitals: 'My Vitals Tracker',
+  recordings: "Doctor's Recorded Sessions",
   progress: 'My Recovery Record',
   medications: 'Medication Tracker',
   messages: 'Messages',
@@ -66,6 +60,7 @@ const PatientPortal = () => {
     switch (page) {
       case 'dashboard': return <PatientDashboard setPage={setPage} />;
       case 'exercises': return <PatientExercises />;
+      case 'vitals': return <PatientVitals />;
       case 'recordings': return <PatientRecordings />;
       case 'progress': return <PatientProgress />;
       case 'medications': return <PatientMedications />;

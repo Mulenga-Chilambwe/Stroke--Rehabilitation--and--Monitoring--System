@@ -1,19 +1,8 @@
-/**
- * pages/healthpro/HPPages.jsx
- * ─────────────────────────────────────────────────────────────
- * Health Professional portal pages — exported as named components:
- *   HPDashboard      – patient case overview with clinical snapshot
- *   HPExercisePlan   – assign / remove exercises per patient
- *   HPReports        – weekly activity table, vitals history
- *   HPRecordings     – upload, preview, and delete personalised
- *                      therapy recordings for each patient
- * ─────────────────────────────────────────────────────────────
- */
-
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { Alert, Badge, Modal, ProgressBar, StatCard } from '../../components/shared/UI';
+import RecoveryInsights from '../../components/shared/RecoveryInsights';
 import {
   difficultyVariant,
   getAssignedExercises,
@@ -126,10 +115,10 @@ const HPDashboard = () => {
               <div className="vitals-grid">
                 {[
                   ['Caregiver', caregiver.name],
-                  ['Blood pressure', vitals?.bp],
-                  ['Heart rate', `${vitals?.heartRate} bpm`],
-                  ['Oxygen', `${vitals?.oxygenSat}%`],
-                  ['Mood', vitals?.mood],
+                  ['Blood pressure', vitals?.bp || '--'],
+                  ['Heart rate', vitals?.heartRate ? `${vitals.heartRate} bpm` : '--'],
+                  ['Oxygen', vitals?.oxygenSat ? `${vitals.oxygenSat}%` : '--'],
+                  ['Mood', vitals?.mood || '--'],
                   ['Assigned videos', assigned.length],
                 ].map(([label, value]) => (
                   <div key={label} className="vital-cell">
@@ -149,6 +138,7 @@ const HPDashboard = () => {
               <Badge variant="green">{sessions.filter((s) => s.completed).length}/{sessions.length}</Badge>
             </div>
             <div className="card__body stack-list">
+              {sessions.length === 0 && <p className="text-muted text-center">No activity recorded yet.</p>}
               {[...sessions].reverse().slice(0, 5).map((session) => (
                 <div key={session.id} className="care-row">
                   <div style={{ flex: 1 }}>
@@ -231,6 +221,7 @@ const HPExercisePlan = () => {
             <Badge variant="blue">{assigned.length}</Badge>
           </div>
           <div className="card__body stack-list">
+            {assigned.length === 0 && <p className="text-muted text-center">No exercises assigned yet.</p>}
             {assigned.map((exercise) => (
               <div key={exercise.id} className="care-row">
                 <div className="care-row__icon">{exercise.icon}</div>
@@ -292,6 +283,16 @@ const HPExercisePlan = () => {
 const HPReports = () => {
   const { state, patients } = useDoctorState();
   const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
+
+  const vitalTrends = useMemo(() => {
+    const sorted = [...state.vitalHistory.filter((v) => v.patientId === selectedId)].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    return {
+      heartRates: sorted.map((v) => v.heartRate || 0),
+      oxygenSats: sorted.map((v) => v.oxygenSat || 0),
+      dates: sorted.map((v) => v.date),
+    };
+  }, [state.vitalHistory, selectedId]);
+
   if (patients.length === 0) return <NoAssignedPatients />;
 
   const patient = getPatient(state, selectedId);
@@ -299,21 +300,33 @@ const HPReports = () => {
   const vitals = state.vitals[selectedId];
   const medication = state.medications[selectedId] || [];
   const history = state.vitalHistory.filter((entry) => entry.patientId === selectedId).slice(-8).reverse();
+  const completed = sessions.filter((s) => s.completed).length;
+  const painReports = sessions.filter((s) => s.pain > 0);
+  const avgPain = painReports.length ? Math.round((painReports.reduce((s, r) => s + r.pain, 0) / painReports.length) * 10) / 10 : 0;
 
   return (
     <div>
       <div className="doctor-toolbar anim-fade-up anim-delay-1">
         <Alert variant="info" icon="Report" style={{ margin: 0, flex: 1 }}>
-          Weekly activity, recovery, medication, pain, and caregiver-entered vitals for each patient.
+          Comprehensive patient recovery report with activity, vitals trends, medication adherence, and pain tracking.
         </Alert>
         <PatientSelector patients={patients} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
 
-      <div className="grid-2 anim-fade-up anim-delay-2">
+      <div className="grid-4 anim-fade-up anim-delay-1" style={{ marginBottom: 20 }}>
+        <StatCard icon="Chart" label="Recovery" value={`${patient.progress}%`} sub={patient.condition} />
+        <StatCard icon="Done" label="Completed" value={completed} sub={`of ${sessions.length} sessions`} />
+        <StatCard icon="Meds" label="Adherence" value={`${medication.filter((m) => m.takenToday).length}/${medication.length}`} sub="meds today" />
+        <StatCard icon="Pain" label="Avg Pain" value={avgPain > 0 ? `${avgPain}/5` : 'None'} sub={painReports.length ? `${painReports.length} reports` : 'No pain'} />
+      </div>
+
+      <RecoveryInsights patientId={selectedId} />
+
+      <div className="grid-2 anim-fade-up anim-delay-2" style={{ marginTop: 20 }}>
         <div className="card">
           <div className="card__header">
             <span className="card__title">{patient.name} weekly activity</span>
-            <Badge variant="blue">{sessions.filter((s) => s.completed).length}/{sessions.length}</Badge>
+            <Badge variant="blue">{completed}/{sessions.length}</Badge>
           </div>
           <div className="card__body" style={{ overflowX: 'auto' }}>
             <table className="data-table">
@@ -323,6 +336,9 @@ const HPReports = () => {
                 </tr>
               </thead>
               <tbody>
+                {sessions.length === 0 && (
+                  <tr><td colSpan={5} className="text-center text-muted">No sessions recorded.</td></tr>
+                )}
                 {sessions.map((session) => (
                   <tr key={session.id}>
                     <td>{session.date}</td>
@@ -352,10 +368,10 @@ const HPReports = () => {
               <div className="divider" />
               <div className="vitals-grid">
                 {[
-                  ['BP', vitals?.bp],
-                  ['Heart rate', `${vitals?.heartRate} bpm`],
-                  ['Oxygen', `${vitals?.oxygenSat}%`],
-                  ['Mood', vitals?.mood],
+                  ['BP', vitals?.bp || '--'],
+                  ['Heart rate', vitals?.heartRate ? `${vitals.heartRate} bpm` : '--'],
+                  ['Oxygen', vitals?.oxygenSat ? `${vitals.oxygenSat}%` : '--'],
+                  ['Mood', vitals?.mood || '--'],
                 ].map(([label, value]) => (
                   <div key={label} className="vital-cell">
                     <div>
@@ -368,11 +384,35 @@ const HPReports = () => {
             </div>
           </div>
 
+          {vitalTrends.heartRates.length > 1 && (
+            <div className="card">
+              <div className="card__header">
+                <span className="card__title">Heart rate trend</span>
+              </div>
+              <div className="card__body">
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 50 }}>
+                  {vitalTrends.heartRates.slice(-10).map((hr, i) => (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ height: `${(hr / Math.max(...vitalTrends.heartRates, 1)) * 40}px`, width: '100%', borderRadius: '2px 2px 0 0', background: hr > 100 ? 'var(--clr-danger)' : 'var(--clr-success)', opacity: 0.8, minWidth: 8 }} />
+                      <span style={{ fontSize: '.5rem', color: 'var(--clr-muted)', marginTop: 2 }}>{hr}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  {vitalTrends.dates.slice(-10).map((d, i) => (
+                    <span key={i} style={{ fontSize: '.5rem', color: 'var(--clr-muted)' }}>{d}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <div className="card__header">
               <span className="card__title">Medication and vitals history</span>
             </div>
             <div className="card__body stack-list">
+              {medication.length === 0 && <p className="text-muted text-sm">No medications prescribed.</p>}
               {medication.map((med) => (
                 <div key={med.id} className="care-row">
                   <div style={{ flex: 1 }}>
@@ -391,6 +431,7 @@ const HPReports = () => {
                   </div>
                 </div>
               ))}
+              {history.length === 0 && <p className="text-muted text-sm">No vitals history.</p>}
             </div>
           </div>
         </div>

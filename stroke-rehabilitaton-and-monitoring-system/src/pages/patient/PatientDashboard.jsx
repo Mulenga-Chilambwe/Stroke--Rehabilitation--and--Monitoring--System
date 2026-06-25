@@ -1,16 +1,8 @@
-/**
- * pages/patient/PatientDashboard.jsx
- * ─────────────────────────────────────────────────────────────
- * Patient home page — shows recovery progress, today's assigned
- * exercises with one-click completion, medication tracker,
- * next scheduled session, and care team summary.
- * ─────────────────────────────────────────────────────────────
- */
-
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
-import { Alert, Badge, StatCard, RecoverySummary } from '../../components/shared/UI';
+import { Alert, Badge, StatCard } from '../../components/shared/UI';
+import RecoveryInsights from '../../components/shared/RecoveryInsights';
 import {
   getAssignedExercises,
   getCaregiverForPatient,
@@ -31,14 +23,13 @@ const PatientDashboard = ({ setPage }) => {
   const assigned = getAssignedExercises(state, patientId);
   const sessions = getPatientSessions(state, patientId);
   const medications = state.medications[patientId] || [];
-  const nextSession = state.nextSession[patientId];
   const today = todayKey();
   const doneToday = sessions.filter((session) => session.date === today && session.completed).length;
   const dailyCount = assigned.filter((exercise) => exercise.freq === 'Daily').length || assigned.length;
   const medsTaken = medications.filter((med) => med.takenToday).length;
+  const alerts = state.alerts.filter((a) => a.patientId === patientId && !a.read);
 
   const markComplete = (exercise) => {
-    const today = todayKey();
     const sessionRecord = {
       patientId,
       exerciseId: exercise.id,
@@ -58,6 +49,17 @@ const PatientDashboard = ({ setPage }) => {
         sessions: existing
           ? s.sessions.map((session) => session.id === existing.id ? { ...session, ...sessionRecord, date: today } : session)
           : [...s.sessions, { id: `s${Date.now()}`, date: today, ...sessionRecord }],
+        alerts: [
+          ...s.alerts,
+          {
+            id: `a${Date.now()}`,
+            patientId,
+            type: 'info',
+            msg: `${patient.name} completed ${exercise.name}.`,
+            time: 'Just now',
+            read: false,
+          },
+        ],
       };
     });
     ctx.syncSession({ ...sessionRecord, date: today, id: `s${Date.now()}` });
@@ -70,13 +72,16 @@ const PatientDashboard = ({ setPage }) => {
           <span className="care-hero__eyebrow">Remote physiotherapy plan</span>
           <h2>Welcome back, {patient.name.split(' ')[0]}</h2>
           <p>
-            Your caregiver {caregiver.name} and {doctor.name} are connected to this same care record.
+            Your caregiver <strong>{caregiver.name}</strong> and <strong>{doctor.name}</strong> are connected in real-time to this care record.
           </p>
           <div className="chip-row">
             <Badge variant="green">{patient.streak}-day streak</Badge>
             <Badge variant="blue">{assigned.length} assigned exercises</Badge>
             <Badge variant={medsTaken === medications.length ? 'green' : 'warn'}>
               {medsTaken}/{medications.length} meds today
+            </Badge>
+            <Badge variant={patient.risk === 'low' ? 'green' : patient.risk === 'moderate' ? 'warn' : 'red'}>
+              {patient.risk} risk
             </Badge>
           </div>
         </div>
@@ -89,41 +94,50 @@ const PatientDashboard = ({ setPage }) => {
       <div className="grid-4 anim-fade-up anim-delay-2" style={{ marginBottom: 20 }}>
         <StatCard icon="Done" label="Today" value={`${doneToday}/${dailyCount}`} sub="therapy sessions" iconBg="#e6f9f0" />
         <StatCard icon="Video" label="Video Library" value={state.exerciseLibrary.length} sub="short exercises" iconBg="var(--clr-primary-lt)" />
-        <StatCard icon="Meds" label="Medication" value={`${medsTaken}/${medications.length}`} sub="taken today" iconBg="#fff5e6" />
+        <StatCard icon="Vitals" label="Vitals" value={state.vitals[patientId]?.bp || '--'} sub={`HR ${state.vitals[patientId]?.heartRate || '--'} bpm`} iconBg="#fff5e6" />
         <StatCard icon="Msg" label="Care Team" value="2" sub="doctor + caregiver" iconBg="#e8ecfb" />
       </div>
 
-      <div className="grid-2 anim-fade-up anim-delay-3">
-        <div className="card">
-          <div className="card__header">
-            <span className="card__title">Today's assigned exercises</span>
-            <button className="btn btn--outline btn--sm" onClick={() => setPage('exercises')}>Open videos</button>
-          </div>
-          <div className="card__body stack-list">
-            {assigned.slice(0, 5).map((exercise) => {
-              const done = sessions.some(
-                (session) => session.date === today && session.exerciseId === exercise.id && session.completed
-              );
-              return (
-                <div key={exercise.id} className="care-row">
-                  <div className="care-row__icon">{exercise.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <strong>{exercise.name}</strong>
-                    <span>{exercise.bodyPart} · {exercise.sets} · {exercise.duration} min</span>
-                  </div>
-                  {done ? (
-                    <Badge variant="green">Done</Badge>
-                  ) : (
-                    <button className="btn btn--primary btn--xs" onClick={() => markComplete(exercise)}>Done</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      {alerts.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          {alerts.map((alert) => (
+            <Alert key={alert.id} variant={alert.type === 'warning' ? 'warn' : 'info'} icon="Alert" style={{ marginBottom: 8 }}>
+              {alert.msg}
+            </Alert>
+          ))}
         </div>
+      )}
 
+      <div className="grid-2 anim-fade-up anim-delay-3">
         <div className="card-stack">
-          <RecoverySummary sessions={sessions} progress={patient.progress} streak={patient.streak} />
+          <div className="card">
+            <div className="card__header">
+              <span className="card__title">Today's assigned exercises</span>
+              <button className="btn btn--outline btn--sm" onClick={() => setPage('exercises')}>Open videos</button>
+            </div>
+            <div className="card__body stack-list">
+              {assigned.length === 0 && <p className="text-muted text-center">No exercises assigned yet. Your doctor will assign exercises soon.</p>}
+              {assigned.slice(0, 5).map((exercise) => {
+                const done = sessions.some(
+                  (session) => session.date === today && session.exerciseId === exercise.id && session.completed
+                );
+                return (
+                  <div key={exercise.id} className="care-row">
+                    <div className="care-row__icon">{exercise.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <strong>{exercise.name}</strong>
+                      <span>{exercise.bodyPart} · {exercise.sets} · {exercise.duration} min</span>
+                    </div>
+                    {done ? (
+                      <Badge variant="green">Done</Badge>
+                    ) : (
+                      <button className="btn btn--primary btn--xs" onClick={() => markComplete(exercise)}>Done</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="card">
             <div className="card__header">
@@ -131,6 +145,7 @@ const PatientDashboard = ({ setPage }) => {
               <button className="btn btn--outline btn--sm" onClick={() => setPage('medications')}>Manage</button>
             </div>
             <div className="card__body stack-list">
+              {medications.length === 0 && <p className="text-muted text-center">No medications prescribed.</p>}
               {medications.map((med) => (
                 <div className="care-row" key={med.id}>
                   <div style={{ flex: 1 }}>
@@ -144,14 +159,9 @@ const PatientDashboard = ({ setPage }) => {
               ))}
             </div>
           </div>
-
-          {nextSession && (
-            <Alert variant="info" icon="Next">
-              <strong>{nextSession.date}</strong><br />
-              {nextSession.exercise}
-            </Alert>
-          )}
         </div>
+
+        <RecoveryInsights patientId={patientId} />
       </div>
     </div>
   );
