@@ -8,6 +8,7 @@ import PatientProgress from '../../pages/patient/PatientProgress';
 import PatientMedications from '../../pages/patient/PatientMedications';
 import PatientRecordings from '../../pages/patient/PatientRecordings';
 import PatientVitals from '../../pages/patient/PatientVitals';
+import PatientProfile from '../../pages/patient/PatientProfile';
 import Messages from '../shared/Messages';
 import '../../styles/patient.css';
 
@@ -24,6 +25,12 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    section: 'My Account',
+    items: [
+      { id: 'profile', icon: 'Profile', label: '' },
+    ],
+  },
+  {
     section: 'Communication',
     items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
@@ -36,6 +43,7 @@ const PAGE_TITLES = {
   recordings: "Doctor's Recorded Sessions",
   progress: 'My Recovery Record',
   medications: 'Medication Tracker',
+  profile: 'My Health Profile',
   messages: 'Messages',
 };
 
@@ -64,6 +72,7 @@ const PatientPortal = () => {
       case 'recordings': return <PatientRecordings />;
       case 'progress': return <PatientProgress />;
       case 'medications': return <PatientMedications />;
+      case 'profile': return <PatientProfile />;
       case 'messages': return <Messages currentUser={currentUser} />;
       default: return <PatientDashboard setPage={setPage} />;
     }

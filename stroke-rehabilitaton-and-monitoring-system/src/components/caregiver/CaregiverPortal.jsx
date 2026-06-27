@@ -14,6 +14,7 @@ import { PageWrapper } from '../shared/UI';
 import CaregiverDashboard from '../../pages/caregiver/CaregiverDashboard';
 import CaregiverVitals from '../../pages/caregiver/CaregiverVitals';
 import CaregiverRecordings from '../../pages/caregiver/CaregiverRecordings';
+import CaregiverProfile from '../../pages/caregiver/CaregiverProfile';
 import Messages from '../shared/Messages';
 import '../../styles/caregiver.css';
 
@@ -27,6 +28,10 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    section: 'My Account',
+    items: [{ id: 'profile', icon: 'Profile', label: '' }],
+  },
+  {
     section: 'Communication',
     items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
@@ -36,6 +41,7 @@ const PAGE_TITLES = {
   dashboard: 'Caregiver Wellbeing Dashboard',
   recordings: 'Doctor\'s Recorded Sessions',
   vitals: 'Log Patient Vitals',
+  profile: 'My Caregiver Profile',
   messages: 'Care Team Messages',
 };
 
@@ -76,6 +82,7 @@ const CaregiverPortal = () => {
       case 'dashboard': return <CaregiverDashboard setPage={setPage} />;
       case 'recordings': return <CaregiverRecordings />;
       case 'vitals': return <CaregiverVitals />;
+      case 'profile': return <CaregiverProfile />;
       case 'messages': return <Messages currentUser={currentUser} />;
       default: return <CaregiverDashboard setPage={setPage} />;
     }

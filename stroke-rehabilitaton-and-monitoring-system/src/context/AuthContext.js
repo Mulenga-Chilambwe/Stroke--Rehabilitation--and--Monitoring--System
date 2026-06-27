@@ -13,10 +13,10 @@ import { DEMO_USERS } from '../data/mockData';
 const AuthContext = createContext(null);
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-const apiRequest = async (path, { method = 'GET', body } = {}) => {
+const apiRequest = async (path, { method = 'GET', body, headers } = {}) => {
   const response = await fetch(`${API_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     ...(body ? { body: JSON.stringify(body) } : {}),
   }).catch(() => {
     throw new Error('Cannot reach the backend. Start the Node server and try again.');
@@ -56,6 +56,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('strokeRehabUser', JSON.stringify(user));
     setCurrentUser(user);
   };
+
+  const updateCurrentUser = useCallback((updates) => {
+    setCurrentUser((prev) => {
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('strokeRehabUser', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   /**
    * login(email, password)
@@ -146,6 +154,7 @@ export const AuthProvider = ({ children }) => {
         loginAsRole,
         register,
         updateDoctorAvailability,
+        updateCurrentUser,
         logout,
       }}
     >

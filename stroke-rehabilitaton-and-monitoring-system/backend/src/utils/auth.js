@@ -25,6 +25,23 @@ const publicUser = (user) => ({
   doctorId: user.doctorId,
   caregiverId: user.caregiverId,
   isAvailable: user.isAvailable,
+  phone: user.phone || '',
+  bio: user.bio || '',
+  title: user.title || '',
+  institution: user.institution || '',
+  licenseNumber: user.licenseNumber || '',
+  yearsOfExperience: user.yearsOfExperience || 0,
+  officeLocation: user.officeLocation || '',
+  relation: user.relation || '',
+  dob: user.dob || '',
+  gender: user.gender || '',
+  bloodType: user.bloodType || '',
+  height: user.height || '',
+  weight: user.weight || '',
+  emergencyName: user.emergencyName || '',
+  emergencyRelation: user.emergencyRelation || '',
+  emergencyPhone: user.emergencyPhone || '',
+  profileComplete: user.profileComplete || false,
 });
 
 const initialsFromName = (name) =>

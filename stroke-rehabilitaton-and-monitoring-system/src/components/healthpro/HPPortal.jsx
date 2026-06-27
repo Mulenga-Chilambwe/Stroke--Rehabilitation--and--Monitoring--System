@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { Alert, PageWrapper } from '../shared/UI';
 import { HPDashboard, HPExercisePlan, HPReports, HPRecordings } from '../../pages/healthpro/HPPages';
+import HPProfile from '../../pages/healthpro/HPProfile';
 import Messages from '../shared/Messages';
 import '../../styles/healthpro.css';
 
@@ -29,6 +30,10 @@ const NAV_SECTIONS = [
     items: [{ id: 'recordings', icon: 'Recording', label: '' }],
   },
   {
+    section: 'My Account',
+    items: [{ id: 'profile', icon: 'Profile', label: '' }],
+  },
+  {
     section: 'Communication',
     items: [{ id: 'messages', icon: 'Chat', label: '' }],
   },
@@ -39,6 +44,7 @@ const PAGE_TITLES = {
   plan: 'Exercise Assignment',
   reports: 'Weekly Patient Activity',
   recordings: 'Recorded Therapy Sessions',
+  profile: 'My Professional Profile',
   messages: 'Care Team Messages',
 };
 
@@ -77,6 +83,7 @@ const HPPortal = () => {
       case 'plan': return <HPExercisePlan />;
       case 'reports': return <HPReports />;
       case 'recordings': return <HPRecordings />;
+      case 'profile': return <HPProfile />;
       case 'messages': return <Messages currentUser={currentUser} />;
       default: return <HPDashboard />;
     }

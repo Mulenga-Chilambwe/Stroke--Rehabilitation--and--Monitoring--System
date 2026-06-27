@@ -5,8 +5,10 @@ export const getPatientIdForUser = (user) => {
 
 export const getDoctorIdForUser = (user) => user?.doctorId || '';
 
-export const getPatient = (state, patientId = 'p1') =>
-  state.patients.find((patient) => patient.id === patientId) || state.patients[0];
+export const getPatient = (state, patientId = 'p1') => {
+  const patient = state.patients.find((patient) => patient.id === patientId) || state.patients[0];
+  return patient || {};
+};
 
 export const getCaregiverForPatient = (state, patientId = 'p1') =>
   state.caregivers.find((caregiver) => caregiver.patientId === patientId) || state.caregivers[0];

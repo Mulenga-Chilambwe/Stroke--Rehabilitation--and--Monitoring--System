@@ -418,3 +418,45 @@ export const apiUpdatePatientProgress = async (patientId, data) => {
     throw error;
   }
 };
+
+// Profile
+export const apiGetProfile = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('apiGetProfile error:', error);
+    throw error;
+  }
+};
+
+export const apiUpdateProfile = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('apiUpdateProfile error:', error);
+    throw error;
+  }
+};
+
+export const apiUpdatePatientProfile = async (patientId, data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('apiUpdatePatientProfile error:', error);
+    throw error;
+  }
+};

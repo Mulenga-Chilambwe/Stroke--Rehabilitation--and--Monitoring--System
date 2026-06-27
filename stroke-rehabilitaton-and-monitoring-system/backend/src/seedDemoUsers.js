@@ -9,6 +9,14 @@ const seedDemoUsers = async () => {
       const email = user.email.toLowerCase();
       const exists = await User.findOne({ email });
 
+      const profileFields = [
+        'phone', 'bio', 'title', 'institution', 'licenseNumber',
+        'yearsOfExperience', 'officeLocation', 'specialties',
+        'relation', 'dob', 'gender', 'bloodType', 'height', 'weight',
+        'emergencyName', 'emergencyRelation', 'emergencyPhone',
+        'profileComplete'
+      ];
+
       if (exists) {
         exists.name = user.name;
         exists.role = user.role;
@@ -19,16 +27,24 @@ const seedDemoUsers = async () => {
         exists.caregiverId = user.caregiverId || "";
         exists.isAvailable = user.isAvailable ?? exists.isAvailable;
         exists.password = await bcrypt.hash(user.password, 10);
+        profileFields.forEach(field => {
+          if (user[field] !== undefined) exists[field] = user[field];
+        });
         return exists.save();
       }
 
-      return User.create({
+      const userData = {
         ...user,
         email,
         caregiverId: user.caregiverId || "",
         isAvailable: user.isAvailable ?? user.role === "hp",
         password: await bcrypt.hash(user.password, 10),
+      };
+      profileFields.forEach(field => {
+        if (user[field] === undefined) userData[field] = field === 'profileComplete' ? false : (field === 'yearsOfExperience' ? 0 : '');
       });
+
+      return User.create(userData);
     })
   );
   console.log("Demo users ready");

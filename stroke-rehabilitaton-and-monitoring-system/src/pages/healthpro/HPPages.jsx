@@ -58,6 +58,7 @@ const HPDashboard = () => {
   const unread = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
   const alerts = state.alerts.filter((alert) => !alert.read);
   const avgProgress = Math.round(patients.reduce((sum, p) => sum + p.progress, 0) / Math.max(patients.length, 1));
+  const pendingInfo = patients.filter((p) => !p.patientEntered).length;
 
   return (
     <div>
@@ -67,6 +68,12 @@ const HPDashboard = () => {
         <StatCard icon="Msg" label="Unread" value={unread} sub="messages" />
         <StatCard icon="Alert" label="Alerts" value={alerts.length} sub="clinical review" />
       </div>
+
+      {pendingInfo > 0 && (
+        <Alert variant="warn" icon="Lock" style={{ marginBottom: 18 }}>
+          <strong>{pendingInfo} patient{pendingInfo > 1 ? 's' : ''}</strong> {pendingInfo > 1 ? 'have' : 'has'} not yet entered their health details. Clinical information will appear once they complete their profile.
+        </Alert>
+      )}
 
       <div className="grid-2 anim-fade-up anim-delay-2">
         <div className="card">
@@ -88,10 +95,11 @@ const HPDashboard = () => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <strong>{patient.name}</strong>
-                    <span>{patient.condition} · Caregiver: {getCaregiverForPatient(state, patient.id).name}</span>
+                    <span>{patient.patientEntered ? patient.condition : 'Awaiting patient info'} · Caregiver: {getCaregiverForPatient(state, patient.id).name}</span>
                     <ProgressBar value={patient.progress} />
                   </div>
                   <Badge variant={riskVariant(patient.risk)}>{patient.risk}</Badge>
+                  {!patient.patientEntered && <Badge variant="warn">Pending</Badge>}
                   {patientAlerts > 0 && <Badge variant="red">{patientAlerts}</Badge>}
                 </button>
               );
@@ -115,6 +123,7 @@ const HPDashboard = () => {
               <div className="vitals-grid">
                 {[
                   ['Caregiver', caregiver.name],
+                  ['Condition', selected.patientEntered ? selected.condition : 'Awaiting patient info'],
                   ['Blood pressure', vitals?.bp || '--'],
                   ['Heart rate', vitals?.heartRate ? `${vitals.heartRate} bpm` : '--'],
                   ['Oxygen', vitals?.oxygenSat ? `${vitals.oxygenSat}%` : '--'],
@@ -313,8 +322,14 @@ const HPReports = () => {
         <PatientSelector patients={patients} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
 
+      {!patient.patientEntered && (
+        <Alert variant="warn" icon="Lock" style={{ marginBottom: 18 }}>
+          <strong>{patient.name}</strong> has not yet entered their health details. The report will show full clinical data once they complete their profile.
+        </Alert>
+      )}
+
       <div className="grid-4 anim-fade-up anim-delay-1" style={{ marginBottom: 20 }}>
-        <StatCard icon="Chart" label="Recovery" value={`${patient.progress}%`} sub={patient.condition} />
+        <StatCard icon="Chart" label="Recovery" value={`${patient.progress}%`} sub={patient.patientEntered ? patient.condition : 'Awaiting info'} />
         <StatCard icon="Done" label="Completed" value={completed} sub={`of ${sessions.length} sessions`} />
         <StatCard icon="Meds" label="Adherence" value={`${medication.filter((m) => m.takenToday).length}/${medication.length}`} sub="meds today" />
         <StatCard icon="Pain" label="Avg Pain" value={avgPain > 0 ? `${avgPain}/5` : 'None'} sub={painReports.length ? `${painReports.length} reports` : 'No pain'} />
@@ -368,6 +383,7 @@ const HPReports = () => {
               <div className="divider" />
               <div className="vitals-grid">
                 {[
+                  ['Condition', patient.patientEntered ? patient.condition : 'Awaiting patient info'],
                   ['BP', vitals?.bp || '--'],
                   ['Heart rate', vitals?.heartRate ? `${vitals.heartRate} bpm` : '--'],
                   ['Oxygen', vitals?.oxygenSat ? `${vitals.oxygenSat}%` : '--'],
@@ -383,6 +399,34 @@ const HPReports = () => {
               </div>
             </div>
           </div>
+
+          {patient.patientEntered && (
+            <div className="card">
+              <div className="card__header">
+                <span className="card__title">Patient-Reported Details</span>
+                <Badge variant="green">Patient entered</Badge>
+              </div>
+              <div className="card__body">
+                <div className="vitals-grid">
+                  {[
+                    ['Stroke Type', patient.strokeType || '--'],
+                    ['Stroke Date', patient.strokeDate || '--'],
+                    ['Affected Side', patient.affectedSide || '--'],
+                    ['Mobility', patient.mobilityLevel || '--'],
+                    ['Speech', patient.speechStatus || '--'],
+                    ['Cognitive', patient.cognitiveStatus || '--'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="vital-cell">
+                      <div>
+                        <div className="vital-cell__label">{label}</div>
+                        <div className="vital-cell__value">{value}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {vitalTrends.heartRates.length > 1 && (
             <div className="card">

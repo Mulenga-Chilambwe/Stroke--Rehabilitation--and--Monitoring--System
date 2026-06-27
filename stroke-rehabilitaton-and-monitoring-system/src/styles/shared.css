@@ -1171,6 +1171,58 @@
   font-size: .68rem;
 }
 
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-field label {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--clr-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.profile-value {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--clr-fg);
+  padding: 2px 0;
+}
+
+.profile-field input,
+.profile-field select,
+.profile-field textarea {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--clr-border);
+  font-size: .84rem;
+  color: var(--clr-fg);
+  background: var(--clr-card);
+  outline: none;
+  transition: var(--transition);
+}
+
+.profile-field input:focus,
+.profile-field select:focus,
+.profile-field textarea:focus {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px var(--clr-primary-glow);
+}
+
+.profile-field textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
 .library-list {
   max-height: 600px;
   overflow: auto;

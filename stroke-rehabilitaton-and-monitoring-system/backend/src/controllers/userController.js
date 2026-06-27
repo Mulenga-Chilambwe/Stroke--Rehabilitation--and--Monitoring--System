@@ -1,4 +1,4 @@
-// User controller — handles registration, login, doctor availability, and listing available doctors
+// User controller — handles registration, login, doctor availability, profile updates, and listing available doctors
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Patient = require("../models/Patient");
@@ -111,6 +111,7 @@ const registerUser = async (req, res) => {
           focus: [],
           caregiverId: user.caregiverId,
           doctorId: user.doctorId,
+          patientEntered: false,
         });
       } catch (err) {
         console.error("Patient record creation error (non-blocking):", err);
@@ -198,9 +199,53 @@ const loginUser = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const allowedFields = [
+      'name', 'phone', 'bio', 'title', 'institution', 'licenseNumber',
+      'yearsOfExperience', 'officeLocation', 'specialties', 'relation',
+      'dob', 'gender', 'bloodType', 'height', 'weight',
+      'emergencyName', 'emergencyRelation', 'emergencyPhone'
+    ];
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+    if (updates.name) {
+      updates.avatar = initialsFromName(updates.name);
+    }
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({ message: "Could not update profile." });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    return res.status(500).json({ message: "Could not load profile." });
+  }
+};
+
 module.exports = {
   listAvailableDoctors,
   loginUser,
   registerUser,
   updateDoctorAvailability,
+  updateProfile,
+  getProfile,
 };

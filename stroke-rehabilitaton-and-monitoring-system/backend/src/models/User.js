@@ -48,6 +48,28 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Profile fields - common
+    phone: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    // Profile fields - doctor/hp
+    title: { type: String, default: "" },
+    institution: { type: String, default: "" },
+    licenseNumber: { type: String, default: "" },
+    yearsOfExperience: { type: Number, default: 0 },
+    officeLocation: { type: String, default: "" },
+    specialties: [{ type: String }],
+    // Profile fields - caregiver
+    relation: { type: String, default: "" },
+    // Profile fields - patient (basic, entered during profile setup)
+    dob: { type: String, default: "" },
+    gender: { type: String, default: "" },
+    bloodType: { type: String, default: "" },
+    height: { type: String, default: "" },
+    weight: { type: String, default: "" },
+    emergencyName: { type: String, default: "" },
+    emergencyRelation: { type: String, default: "" },
+    emergencyPhone: { type: String, default: "" },
+    profileComplete: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
