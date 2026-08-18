@@ -19,7 +19,7 @@ const PatientMedications = () => {
   const { currentUser } = useAuth();
   const [state, dispatch] = useStore();
   const patientId = getPatientIdForUser(currentUser);
-  const medications = state.medications[patientId] || [];
+  const medications = (state.medications || {})[patientId] || [];
   const [form, setForm] = useState(emptyForm);
 
   const updateTaken = (id) => {

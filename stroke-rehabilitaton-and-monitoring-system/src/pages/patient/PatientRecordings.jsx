@@ -21,7 +21,7 @@ const PatientRecordings = () => {
   const [preview, setPreview] = useState(null);
 
   const exerciseMap = {};
-  state.exerciseLibrary.forEach((ex) => { exerciseMap[ex.id] = ex; });
+  (state.exerciseLibrary || []).forEach((ex) => { exerciseMap[ex.id] = ex; });
 
   const markViewed = (recording) => {
     dispatch((s) => ({
@@ -32,7 +32,7 @@ const PatientRecordings = () => {
     }));
   };
 
-  const doctor = state.doctors.find((d) => d.id === currentUser.doctorId) || state.doctors[0];
+  const doctor = (state.doctors || []).find((d) => d.id === currentUser.doctorId) || (state.doctors || [])[0];
 
   return (
     <div>

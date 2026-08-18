@@ -12,7 +12,7 @@ const PatientVitals = () => {
   const patient = getPatient(state, patientId);
   const doctor = getDoctorForPatient(state, patientId);
   const caregiver = getCaregiverForPatient(state, patientId);
-  const vitals = state.vitals[patientId];
+  const vitals = (state.vitals || {})[patientId];
   const [form, setForm] = useState({
     heartRate: vitals?.heartRate || 72,
     bp: vitals?.bp || '120/80',
@@ -76,7 +76,7 @@ const PatientVitals = () => {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const history = state.vitalHistory.filter((entry) => entry.patientId === patientId).slice(-8).reverse();
+  const history = (state.vitalHistory || []).filter((entry) => entry.patientId === patientId).slice(-8).reverse();
 
   return (
     <div>

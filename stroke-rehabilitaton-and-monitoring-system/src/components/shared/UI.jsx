@@ -164,7 +164,7 @@ export const Topbar = ({ title, user, unreadCount = 0, onBellClick }) => {
         </button>
 
         {/* User name chip */}
-        <span className="user-chip">{user.name.split(' ')[0]}</span>
+        <span className="user-chip">{(user?.name || '').split(' ')[0]}</span>
       </div>
     </header>
   );

@@ -52,7 +52,7 @@ const HPPortal = () => {
   const { currentUser, logout, updateDoctorAvailability } = useAuth();
   const [state, dispatch] = useStore();
   const [page, setPage] = useState('dashboard');
-  const unreadCount = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
+  const unreadCount = (state.messages || []).filter((message) => message.to === 'hp' && !message.read).length;
   const isAvailable = currentUser.isAvailable !== false;
 
   const toggleAvailability = async () => {

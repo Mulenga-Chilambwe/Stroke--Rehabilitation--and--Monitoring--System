@@ -20,14 +20,17 @@ const PatientDashboard = ({ setPage }) => {
   const patient = getPatient(state, patientId);
   const caregiver = getCaregiverForPatient(state, patientId);
   const doctor = getDoctorForPatient(state, patientId);
+  if (!patient?.name) return null;
+  if (!caregiver?.name) return null;
+  if (!doctor?.name) return null;
   const assigned = getAssignedExercises(state, patientId);
   const sessions = getPatientSessions(state, patientId);
-  const medications = state.medications[patientId] || [];
+  const medications = (state.medications || {})[patientId] || [];
   const today = todayKey();
   const doneToday = sessions.filter((session) => session.date === today && session.completed).length;
   const dailyCount = assigned.filter((exercise) => exercise.freq === 'Daily').length || assigned.length;
   const medsTaken = medications.filter((med) => med.takenToday).length;
-  const alerts = state.alerts.filter((a) => a.patientId === patientId && !a.read);
+  const alerts = (state.alerts || []).filter((a) => a.patientId === patientId && !a.read);
 
   const markComplete = (exercise) => {
     const sessionRecord = {
@@ -70,7 +73,7 @@ const PatientDashboard = ({ setPage }) => {
       <section className="care-hero anim-fade-up anim-delay-1">
         <div>
           <span className="care-hero__eyebrow">Remote physiotherapy plan</span>
-          <h2>Welcome back, {patient.name.split(' ')[0]}</h2>
+          <h2>Welcome back, {(patient?.name || '').split(' ')[0]}</h2>
           <p>
             Your caregiver <strong>{caregiver.name}</strong> and <strong>{doctor.name}</strong> are connected in real-time to this care record.
           </p>
@@ -93,8 +96,8 @@ const PatientDashboard = ({ setPage }) => {
 
       <div className="grid-4 anim-fade-up anim-delay-2" style={{ marginBottom: 20 }}>
         <StatCard icon="Done" label="Today" value={`${doneToday}/${dailyCount}`} sub="therapy sessions" iconBg="#e6f9f0" />
-        <StatCard icon="Video" label="Video Library" value={state.exerciseLibrary.length} sub="short exercises" iconBg="var(--clr-primary-lt)" />
-        <StatCard icon="Vitals" label="Vitals" value={state.vitals[patientId]?.bp || '--'} sub={`HR ${state.vitals[patientId]?.heartRate || '--'} bpm`} iconBg="#fff5e6" />
+        <StatCard icon="Video" label="Video Library" value={(state.exerciseLibrary || []).length} sub="short exercises" iconBg="var(--clr-primary-lt)" />
+        <StatCard icon="Vitals" label="Vitals" value={(state.vitals || {})[patientId]?.bp || '--'} sub={`HR ${(state.vitals || {})[patientId]?.heartRate || '--'} bpm`} iconBg="#fff5e6" />
         <StatCard icon="Msg" label="Care Team" value="2" sub="doctor + caregiver" iconBg="#e8ecfb" />
       </div>
 

@@ -36,16 +36,16 @@ const CaregiverRecordings = () => {
 
   const recordings = getPatientRecordings(state, patientId);
   const patient = getPatient(state, patientId);
-  const doctor = state.doctors.find((d) => d.id === patient.doctorId) || state.doctors[0];
+  const doctor = (state.doctors || []).find((d) => d.id === patient.doctorId) || (state.doctors || [])[0];
 
   const exerciseMap = {};
-  state.exerciseLibrary.forEach((ex) => { exerciseMap[ex.id] = ex; });
+  (state.exerciseLibrary || []).forEach((ex) => { exerciseMap[ex.id] = ex; });
 
   return (
     <div>
       <Alert variant="info" icon="Recording" style={{ marginBottom: 18 }}>
         Therapy recordings from <strong>{doctor.name}</strong> for <strong>{patient.name}</strong>.
-        Review the doctor&apos;s guidance to help {patient.name.split(' ')[0]} during practice sessions.
+        Review the doctor&apos;s guidance to help {(patient?.name || '').split(' ')[0]} during practice sessions.
       </Alert>
 
       {recordings.length === 0 ? (

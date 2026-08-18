@@ -34,12 +34,13 @@ export const RecoveryInsights = ({ patientId: propPatientId, compact = false }) 
   const { currentUser } = useAuth();
   const [state] = useStore();
   const patientId = propPatientId || getPatientIdForUser(currentUser) || 'p1';
-  const patient = state.patients.find((p) => p.id === patientId) || state.patients[0];
-  const sessions = state.sessions.filter((s) => s.patientId === patientId);
-  const vitals = state.vitals[patientId];
-  const vitalHistory = state.vitalHistory.filter((v) => v.patientId === patientId);
-  const medications = state.medications[patientId] || [];
-  const alerts = state.alerts.filter((a) => a.patientId === patientId);
+  const patient = (state.patients || []).find((p) => p.id === patientId) || (state.patients || [])[0] || {};
+  if (!patient?.name) return null;
+  const sessions = (state.sessions || []).filter((s) => s.patientId === patientId);
+  const vitals = (state.vitals || {})[patientId];
+  const vitalHistory = (state.vitalHistory || []).filter((v) => v.patientId === patientId);
+  const medications = (state.medications || {})[patientId] || [];
+  const alerts = (state.alerts || []).filter((a) => a.patientId === patientId);
 
   const completed = sessions.filter((s) => s.completed).length;
   const painReports = sessions.filter((s) => s.pain > 0);

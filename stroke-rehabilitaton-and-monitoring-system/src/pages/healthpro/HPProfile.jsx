@@ -75,7 +75,7 @@ const HPProfile = () => {
     }));
   };
 
-  const doctorPatients = state.patients.filter((p) => p.doctorId === currentUser.doctorId);
+  const doctorPatients = (state.patients || []).filter((p) => p.doctorId === currentUser.doctorId);
 
   return (
     <div>

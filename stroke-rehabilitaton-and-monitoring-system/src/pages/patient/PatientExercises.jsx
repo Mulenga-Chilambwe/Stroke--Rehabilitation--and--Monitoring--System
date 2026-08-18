@@ -32,11 +32,11 @@ const PatientExercises = () => {
   const [notes, setNotes] = useState('');
 
   const categories = useMemo(
-    () => ['All', ...new Set(state.exerciseLibrary.map((exercise) => exercise.category))],
+    () => ['All', ...new Set((state.exerciseLibrary || []).map((exercise) => exercise.category))],
     [state.exerciseLibrary]
   );
 
-  const source = tab === 'assigned' ? assigned : state.exerciseLibrary;
+  const source = tab === 'assigned' ? assigned : (state.exerciseLibrary || []);
   const filtered = filter === 'All'
     ? source
     : source.filter((exercise) => exercise.category === filter);
@@ -90,7 +90,7 @@ const PatientExercises = () => {
   return (
     <div>
       <Alert variant="info" icon="Video" style={{ marginBottom: 18 }}>
-        Watch your assigned therapy videos or browse the full library of {state.exerciseLibrary.length} short remote-physio videos.
+        Watch your assigned therapy videos or browse the full library of {(state.exerciseLibrary || []).length} short remote-physio videos.
       </Alert>
 
       <div className="therapy-toolbar anim-fade-up anim-delay-1">
@@ -111,7 +111,7 @@ const PatientExercises = () => {
 
       <div className="video-grid anim-fade-up anim-delay-2">
         {filtered.map((exercise) => {
-          const done = state.sessions.some(
+          const done = (state.sessions || []).some(
             (session) =>
               session.patientId === patientId &&
               session.exerciseId === exercise.id &&

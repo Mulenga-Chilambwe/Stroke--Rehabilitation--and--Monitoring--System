@@ -15,7 +15,7 @@ const CaregiverProfile = () => {
   const [state, dispatch] = useStore();
   const patientId = currentUser.patientId || '';
   const patient = patientId ? getPatient(state, patientId) : null;
-  const caregiverInfo = state.caregivers.find((c) => c.id === currentUser.caregiverId);
+  const caregiverInfo = (state.caregivers || []).find((c) => c.id === currentUser.caregiverId);
 
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({

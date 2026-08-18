@@ -83,7 +83,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableDoctors, setAvailableDoctors] = useState(() =>
-    state.doctors.filter((doctor) => doctor.isAvailable !== false)
+    (state.doctors || []).filter((doctor) => doctor.isAvailable !== false)
   );
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({
@@ -120,7 +120,7 @@ const Login = () => {
         return;
       }
 
-      const localDoctors = state.doctors.filter((doctor) => doctor.isAvailable !== false);
+      const localDoctors = (state.doctors || []).filter((doctor) => doctor.isAvailable !== false);
       setAvailableDoctors(localDoctors);
       setRegisterForm((current) => ({
         ...current,

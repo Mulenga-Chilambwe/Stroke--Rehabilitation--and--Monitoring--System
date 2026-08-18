@@ -13,9 +13,9 @@ const PatientProgress = () => {
   const sessions = getPatientSessions(state, patientId);
   const completed = sessions.filter((session) => session.completed).length;
   const painReports = sessions.filter((session) => session.pain > 0);
-  const vitals = state.vitals[patientId];
-  const medication = state.medications[patientId] || [];
-  const vitalHistory = state.vitalHistory.filter((v) => v.patientId === patientId);
+  const vitals = (state.vitals || {})[patientId];
+  const medication = (state.medications || {})[patientId] || [];
+  const vitalHistory = (state.vitalHistory || []).filter((v) => v.patientId === patientId);
 
   const exerciseBreakdown = useMemo(() => {
     const map = {};

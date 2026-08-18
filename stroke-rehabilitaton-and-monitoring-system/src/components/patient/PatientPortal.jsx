@@ -53,7 +53,7 @@ const PatientPortal = () => {
   const [page, setPage] = useState('dashboard');
   const patientId = currentUser.patientId || 'p1';
 
-  const unreadCount = state.messages.filter(
+  const unreadCount = (state.messages || []).filter(
     (message) => message.patientId === patientId && message.to === 'patient' && !message.read
   ).length;
 

@@ -28,7 +28,7 @@ const Messages = ({ currentUser }) => {
   const [state, dispatch, ctx] = useStore();
   const doctorId = getDoctorIdForUser(currentUser);
   const defaultPatientId = getPatientIdForUser(currentUser);
-  const doctorPatients = state.patients.filter((patient) => patient.doctorId === doctorId);
+  const doctorPatients = (state.patients || []).filter((patient) => patient.doctorId === doctorId);
   const [patientId, setPatientId] = useState(defaultPatientId);
   const [recipient, setRecipient] = useState(currentUser.role === 'hp' ? 'patient' : 'hp');
   const [text, setText] = useState('');
@@ -60,7 +60,7 @@ const Messages = ({ currentUser }) => {
   );
 
   const recipientOptions = ['patient', 'caregiver', 'hp'].filter((role) => role !== currentUser.role);
-  const thread = state.messages.filter(
+  const thread = (state.messages || []).filter(
     (message) =>
       message.patientId === activePatientId &&
       ((message.from === currentUser.role && message.to === recipient) ||
@@ -149,7 +149,7 @@ const Messages = ({ currentUser }) => {
       <div className="conversation-strip">
         {['patient', 'caregiver', 'hp'].map((role) => (
           <div key={role} className={`conversation-person ${role === currentUser.role ? 'active' : ''}`}>
-            <strong>{names[role].split(' (')[0]}</strong>
+            <strong>{(names[role] || '').split(' (')[0]}</strong>
             <span>{roleLabel[role]}</span>
           </div>
         ))}
@@ -181,7 +181,7 @@ const Messages = ({ currentUser }) => {
           className="chat-input chat-input--textarea"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`Message ${names[recipient].split(' (')[0]} in detail...`}
+          placeholder={`Message ${(names[recipient] || '').split(' (')[0]} in detail...`}
         />
         <button className="btn btn--primary btn--sm" onClick={sendMessage} disabled={!text.trim()}>
           Send

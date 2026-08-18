@@ -19,7 +19,7 @@ const useDoctorState = () => {
   const { currentUser } = useAuth();
   const [state, dispatch, ctx] = useStore();
   const doctorId = getDoctorIdForUser(currentUser);
-  const patients = state.patients.filter((patient) => patient.doctorId === doctorId);
+  const patients = (state.patients || []).filter((patient) => patient.doctorId === doctorId);
   return { currentUser, state, dispatch, ctx, doctorId, patients };
 };
 
@@ -52,11 +52,11 @@ const HPDashboard = () => {
 
   const selected = getPatient(state, selectedId);
   const caregiver = getCaregiverForPatient(state, selectedId);
-  const vitals = state.vitals[selectedId];
+  const vitals = (state.vitals || {})[selectedId];
   const sessions = getPatientSessions(state, selectedId);
   const assigned = getAssignedExercises(state, selectedId);
-  const unread = state.messages.filter((message) => message.to === 'hp' && !message.read).length;
-  const alerts = state.alerts.filter((alert) => !alert.read);
+  const unread = (state.messages || []).filter((message) => message.to === 'hp' && !message.read).length;
+  const alerts = (state.alerts || []).filter((alert) => !alert.read);
   const avgProgress = Math.round(patients.reduce((sum, p) => sum + p.progress, 0) / Math.max(patients.length, 1));
   const pendingInfo = patients.filter((p) => !p.patientEntered).length;
 
@@ -83,7 +83,7 @@ const HPDashboard = () => {
           </div>
           <div className="card__body stack-list">
             {patients.map((patient) => {
-              const patientAlerts = state.alerts.filter((alert) => alert.patientId === patient.id && !alert.read).length;
+              const patientAlerts = (state.alerts || []).filter((alert) => alert.patientId === patient.id && !alert.read).length;
               return (
                 <button
                   key={patient.id}
@@ -171,11 +171,11 @@ const HPExercisePlan = () => {
   const [focus, setFocus] = useState('All');
   const [preview, setPreview] = useState(null);
   const assigned = getAssignedExercises(state, selectedId);
-  const assignedIds = state.assignments[selectedId] || [];
-  const categories = useMemo(() => ['All', ...new Set(state.exerciseLibrary.map((exercise) => exercise.category))], [state.exerciseLibrary]);
+  const assignedIds = (state.assignments || {})[selectedId] || [];
+  const categories = useMemo(() => ['All', ...new Set((state.exerciseLibrary || []).map((exercise) => exercise.category))], [state.exerciseLibrary]);
   const library = focus === 'All'
-    ? state.exerciseLibrary
-    : state.exerciseLibrary.filter((exercise) => exercise.category === focus || exercise.bodyPart === focus);
+    ? (state.exerciseLibrary || [])
+    : (state.exerciseLibrary || []).filter((exercise) => exercise.category === focus || exercise.bodyPart === focus);
 
   if (patients.length === 0) return <NoAssignedPatients />;
 
@@ -294,7 +294,7 @@ const HPReports = () => {
   const [selectedId, setSelectedId] = useState(patients[0]?.id || 'p1');
 
   const vitalTrends = useMemo(() => {
-    const sorted = [...state.vitalHistory.filter((v) => v.patientId === selectedId)].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    const sorted = [...(state.vitalHistory || []).filter((v) => v.patientId === selectedId)].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
     return {
       heartRates: sorted.map((v) => v.heartRate || 0),
       oxygenSats: sorted.map((v) => v.oxygenSat || 0),
@@ -306,9 +306,9 @@ const HPReports = () => {
 
   const patient = getPatient(state, selectedId);
   const sessions = getPatientSessions(state, selectedId);
-  const vitals = state.vitals[selectedId];
-  const medication = state.medications[selectedId] || [];
-  const history = state.vitalHistory.filter((entry) => entry.patientId === selectedId).slice(-8).reverse();
+  const vitals = (state.vitals || {})[selectedId];
+  const medication = (state.medications || {})[selectedId] || [];
+  const history = (state.vitalHistory || []).filter((entry) => entry.patientId === selectedId).slice(-8).reverse();
   const completed = sessions.filter((s) => s.completed).length;
   const painReports = sessions.filter((s) => s.pain > 0);
   const avgPain = painReports.length ? Math.round((painReports.reduce((s, r) => s + r.pain, 0) / painReports.length) * 10) / 10 : 0;
@@ -564,7 +564,7 @@ const HPRecordings = () => {
   }, {});
 
   const exerciseMap = {};
-  state.exerciseLibrary.forEach((ex) => { exerciseMap[ex.id] = ex; });
+  (state.exerciseLibrary || []).forEach((ex) => { exerciseMap[ex.id] = ex; });
 
   return (
     <div>
@@ -587,7 +587,7 @@ const HPRecordings = () => {
             onClick={() => setSelectedId(patient.id)}
           >
             <div className="stat-card__icon" style={{ background: 'var(--clr-primary-lt)' }}>Rec</div>
-            <div className="stat-card__label">{patient.name.split(' ')[0]}</div>
+            <div className="stat-card__label">{(patient?.name || '').split(' ')[0]}</div>
             <div className="stat-card__value">{patientRecordingCounts[patient.id] || 0}</div>
             <div className="stat-card__sub">recordings</div>
           </button>
@@ -766,7 +766,7 @@ const HPRecordings = () => {
                 {assigned.map((exercise) => (
                   <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                 ))}
-                {state.exerciseLibrary.filter((ex) => !assigned.find((a) => a.id === ex.id)).map((exercise) => (
+                {(state.exerciseLibrary || []).filter((ex) => !assigned.find((a) => a.id === ex.id)).map((exercise) => (
                   <option key={exercise.id} value={exercise.id}>{exercise.name} (library)</option>
                 ))}
               </select>

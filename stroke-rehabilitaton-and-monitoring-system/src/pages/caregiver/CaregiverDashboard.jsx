@@ -18,11 +18,11 @@ const CaregiverDashboard = ({ setPage }) => {
   const patientId = getPatientIdForUser(currentUser);
   const patient = getPatient(state, patientId);
   const doctor = getDoctorForPatient(state, patientId);
-  const vitals = state.vitals[patientId];
+  const vitals = (state.vitals || {})[patientId];
   const assigned = getAssignedExercises(state, patientId);
   const sessions = getPatientSessions(state, patientId);
-  const medication = state.medications[patientId] || [];
-  const alerts = state.alerts.filter((alert) => alert.patientId === patientId);
+  const medication = (state.medications || {})[patientId] || [];
+  const alerts = (state.alerts || []).filter((alert) => alert.patientId === patientId);
   const today = todayKey();
   const doneToday = sessions.filter((session) => session.date === today && session.completed).length;
 

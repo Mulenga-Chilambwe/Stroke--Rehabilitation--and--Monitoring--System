@@ -51,7 +51,7 @@ const CaregiverPortal = () => {
   const [page, setPage] = useState('dashboard');
   const patientId = currentUser.patientId || '';
 
-  const unreadCount = state.messages.filter(
+  const unreadCount = (state.messages || []).filter(
     (message) => message.patientId === patientId && message.to === 'caregiver' && !message.read
   ).length;
 
